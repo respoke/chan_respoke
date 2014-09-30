@@ -1,0 +1,10 @@
+#!/bin/sh
+
+AWK=${AWK:-awk}
+
+# output a list of (non asterisk modules) library dependencies
+${AWK} '
+/\/\*\*\* MODULEINFO/ {printit=1; next}
+/\*\*\*\// {if (printit) exit}
+!/.*res_/ && !/.*chan_/ && !/.*func_/ && !/.*core/ && !/.*TEST_/ {if (printit) print}
+' $1 | sed -ne '/depend/{s/.*<depend>\(.*\)<\/depend>.*/\1/p;}'

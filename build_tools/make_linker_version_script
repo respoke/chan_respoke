@@ -1,0 +1,18 @@
+#!/bin/sh
+
+AWK=${AWK:-awk}
+
+DEFAULT_EXPORT=$(cat <<'EOF'
+{
+	global:
+		/* See main/asterisk.exports.in for an explanation why this is
+		 * needed. */
+		_IO_stdin_used;
+	local:
+		*;
+};
+EOF
+)
+
+test -f ${1}.exports.in && ${AWK} "{sub(\"LINKER_SYMBOL_PREFIX\", \"${2}\"); print;}" ${1}.exports.in > ${1}.exports && exit 0
+test -f ${1}.exports.in || rm -f ${1}.exports && echo "${DEFAULT_EXPORT}" > ${1}.exports && exit 0

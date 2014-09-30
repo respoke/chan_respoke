@@ -1,0 +1,6 @@
+{
+	global:
+		LINKER_SYMBOL_PREFIXrespoke_session_*;
+	local:
+		*;
+};

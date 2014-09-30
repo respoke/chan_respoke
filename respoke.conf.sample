@@ -1,0 +1,89 @@
+[general]
+; SYNOPSIS: Options that apply to the overall Respoke stack.
+type=general      ; type must be specified and set to 'general'
+packet_logging=no ; log incoming/outgoing message packets - useful for debugging
+                  ; (default: "no")
+
+[transport_t](!)
+; SYNOPSIS: Transport layer options.
+type=transport                     ; type must be specified and set to 'transport'
+protocol=socket.io                 ; protocol used by the transport (currently only
+                                   ; 'socket.io' is supported).
+;uri=https://api.respoke.io        ; the location to connect to
+                                   ; (default: https://api.respoke.io)
+;uri_api=https://api.respoke.io/v1 ; the url for the Respoke REST API including
+                                   ; version number.
+                                   ; see https://docs.respoke.io/reference/rest-api.html
+                                   ; for more information.
+                                   ; (default: https://api.respoke.io/v1)
+
+[app_t](!)
+; SYNOPSIS: Application specific options.  Not to be confused with a dialplan
+; application, this 'app' type represents an application registered via the
+; Respoke portal.
+type=app     ; type must be specified and set to 'app'
+;app_secret= ; application secret used for authentication (can be retrieved from
+             ; the Respoke portal after creating an application through it)
+
+[endpoint_t](!)
+;  SYNOPSIS: Endpoint specific options.
+type=endpoint         ; type must be specified and set to 'endpoint'
+context=default       ; the dialplan context to send incoming calls to
+                      ; (default: "default")
+register=yes          ; register endpoint with the application service.
+                      ; registering an endpoint notifies the Respoke
+                      ; service that this endpoint is a valid target/source
+                      ; for message routing.
+rtp_engine=asterisk   ; (default: "asterisk")
+sdp_session=asterisk  ; (default: "asterisk")
+sdp_owner=-           ; (default: "-")
+media_address=0.0.0.0 ; (default: "0.0.0.0")
+rtp_ipv6=no           ; allow IPv6 RTP traffic (default: "no")
+turn=no               ; whether or not to enable TURN support (default: "no")
+disallow=all          ; disallowed media codecs (default: "")
+;allow=               ; allowed media codecs (default: "")
+;app=                 ; the application the endpoint is associated with
+;transport=           ; the transport to use with the endpoint - note this field
+                      ; is required in order to register the endpoint
+;from=                ; value to use as the local source
+;from_type=web        ; value to use as the local source type (default: "web")
+;callerid=            ; callerid to use on the endpoint
+;redirect_method=     ; how received redirects (connect a call to a different
+                      ; endpoint) are handled. valid values include:
+                      ;   "internal" - the channel remains up and a new offer is
+                      ;                sent to the new target
+                      ;   "core" - use the built in Asterisk call mechanism
+                      ; (default: "core")
+;dtls_verify=         ; verify that the provided peer certificate is valid
+;dtls_rekey=          ; interval at which to renegotiate the TLS session and
+                      ; rekey the SRTP session
+;dtls_cert_file=      ; path to certificate file to present to peer
+;dtls_private_key=    ; path to private key for certificate file
+;dtls_cipher=         ; cipher to use for DTLS negotiation
+;dtls_ca_file=        ; path to certificate authority certificate
+;dtls_ca_path=        ; path to a directory containing certificate authority
+                      ; certificates
+;dtls_setup=          ; whether we are willing to accept connections connect to
+                      ; the other party or both
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; EXAMPLE SETUP ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; using the above templates and their defaults define an endpoint (that is
+; registered with service at startup), an associated application, and transport.
+
+[example](transport_t)
+
+[example](app_t)
+app_secret=4c8f865-a1e6-4772-9b1a-58307cee492
+
+[example](endpoint_t)
+register=yes
+from=gowron
+allow=ulaw
+app=example
+transport=example
+dtls_verify=fingerprint
+dtls_cert_file=/etc/asterisk/keys/asterisk.pem
+dtls_ca_file=/etc/asterisk/keys/ca.crt
+dtls_setup=actpass

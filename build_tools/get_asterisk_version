@@ -1,0 +1,11 @@
+#!/bin/sh
+
+AWK=${AWK:-awk}
+
+# the below grabs the first number out of the version string, so if the
+# version number is missing (i.e. for trunk) then it will find the current
+# revision number (which is okay since we do a check for <= an asterisk
+# version and the revision number will always be greater than that).
+AST_VERSION=$($1/sbin/asterisk -V  | awk -F '[^0-9]*' '{print $2}')
+
+[ "${AST_VERSION}" -lt "$2" ] && echo "invalid"
