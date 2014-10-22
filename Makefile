@@ -3,11 +3,11 @@
 # Copyright (C) 2014, D.C.S. LLC
 #
 # See https://www.respoke.io for more information about
-# Respoke. Please do not directly contact
-# any of the maintainers of this project for assistance;
+# Respoke. Please do not directly contact any of the
+# maintainers of this project for assistance.
 # Respoke offers a community forum to submit and discuss
 # issues at http://community.respoke.io; please raise any
-# issues there, using the tag chan_respoke
+# issues there.
 #
 # See http://www.asterisk.org for more information about
 # the Asterisk project. Please do not directly contact
@@ -26,19 +26,23 @@
 CC=gcc
 
 ifeq ($(AST_INSTALL_DIR),)
-    AST_INSTALL_DIR=/usr
+    AST_EXECS_DIR=/usr
+else
+    AST_EXECS_DIR=$(AST_INSTALL_DIR)
 endif
 
 AST_VERSION=13
-AST_MODULES_DIR=$(AST_INSTALL_DIR)/lib/asterisk/modules
-AST_INCLUDE_DIR=$(AST_INSTALL_DIR)/include/asterisk
+AST_MODULES_DIR=$(AST_EXECS_DIR)/lib/asterisk/modules
+AST_INCLUDE_DIR=$(AST_EXECS_DIR)/include/asterisk
+AST_CONF_DIR=$(AST_INSTALL_DIR)/etc/asterisk
+AST_SOUNDS_DIR=$(AST_INSTALL_DIR)/var/lib/asterisk/sounds
 
 # if asterisk is not installed at location don't proceed
 $(if $(wildcard $(AST_INCLUDE_DIR)),, \
-	$(error "Asterisk installation not found under $(AST_INSTALL_DIR)"))
+	$(error "Asterisk installation not found under $(AST_EXECS_DIR)"))
 
 # only build against certain asterisk versions
-$(if $(shell build_tools/get_asterisk_version $(AST_INSTALL_DIR) $(AST_VERSION)), \
+$(if $(shell build_tools/get_asterisk_version $(AST_EXECS_DIR) $(AST_VERSION)), \
 	$(error "Asterisk version must be >= $(AST_VERSION) to build against"))
 
 # res_respoke
@@ -60,7 +64,7 @@ MOD_SRCS=$(filter-out $(RES_RESPOKE_SRC),$(wildcard $(addsuffix *.c,$(SUB_DIRS))
 MOD_TARGETS=$(MOD_SRCS:.c=.so)
 
 # build/link flags
-INCLUDES=-I$(AST_INSTALL_DIR)/include -Iinclude -I$(RES_RESPOKE_DIR)/include
+INCLUDES=-I$(AST_EXECS_DIR)/include -Iinclude -I$(RES_RESPOKE_DIR)/include
 CFLAGS=-fPIC -g -Wall -Werror -D_REENTRANT $(INCLUDES)
 LDFLAGS=-shared -Wl,--version-script,$(subst .so,.exports,$@)
 
@@ -91,6 +95,25 @@ debug: all
 tests: CFLAGS+=-DTEST_FRAMEWORK
 tests: debug $(TEST_TARGETS)
 
+install-example:
+	install -m 644 example/*.conf $(AST_CONF_DIR)
+	install -m 644 example/sounds/respoke* $(AST_SOUNDS_DIR)
+	mkdir -p $(AST_CONF_DIR)/rma_example_keys
+	install -m 644 example/keys/rma* $(AST_CONF_DIR)/rma_example_keys
+	@echo ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;"
+	@echo ";;; WARNING!!"
+	@echo ";;;"
+	@echo ";;; An example certificate authority and client certificate have been"
+	@echo ";;; installed under $(AST_CONF_DIR)/rma_example_keys. They are for"
+	@echo ";;; example use only. DO NOT use in a production environment."
+	@echo ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;"
+
+uninstall-example:
+	$(RM) $(AST_CONF_DIR)/respoke.conf
+	$(RM) $(AST_CONF_DIR)/extensions.conf
+	$(RM) $(AST_SOUNDS_DIR)/respoke*
+	$(RM) -r $(AST_CONF_DIR)/rma_example_keys
+
 clean:
 	find . -type f -name "*.exports" -delete
 	find . -type f -name "*.o" -delete
@@ -106,4 +129,4 @@ uninstall:
 	$(RM) $(AST_MODULES_DIR)/*socket_io*.so
 	$(RM) $(AST_MODULES_DIR)/*respoke*.so
 
-.PHONY: all clean install uninstall debug tests
+.PHONY: all clean install uninstall debug tests install-example uninstall-example

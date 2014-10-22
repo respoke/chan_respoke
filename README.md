@@ -51,4 +51,28 @@ The respoke configuration file follows the same rules and similar patterns to
 that of a typical Asterisk configuration file.  See the 'respoke.conf.sample'
 file for more information.
 
+## Example
 
+A basic example configuration and setup can be found under the "example"
+directory. To install the example execute the following command (Note, that
+this will overwrite any "respoke.conf" and "extensions.conf" files currently
+residing under the Asterisk install directory. Be sure to back up any files
+before proceeding):
+
+    make install-example
+
+This installs an example respoke configuration along with a simple dialplan as
+well as some sounds files used for playback. An example certificate authority
+and client certificate are also installed in order to facilitate audio between
+endpoints (*WARNING* - These files are for example use only and should not be
+used in a production environment).
+
+Once installed, edit the "respoke.conf" file and set the "app_id" option under
+the "app" section to a valid respoke app-id. After starting Asterisk, and
+sending an offer/call via Respoke from a properly constructed application to
+one of the configured endpoints (basic or mixdown) the appropriate audio should
+be heard and the call hung up.
+
+To uninstall all files associated with the example issue the following command:
+
+    make uninstall-example
