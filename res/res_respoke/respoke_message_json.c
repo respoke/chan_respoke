@@ -280,24 +280,30 @@ const char *respoke_message_fingerprint_type_get(
 	const struct respoke_message *message, const char *type)
 {
 	struct ast_json *json_media;
+	const char *res;
 
 	if (json_media_get(message, type, &json_media)) {
 		return NULL;
 	}
 
-	return string_get(object_get(json_media, "fingerprint"), "type");
+	res = string_get(object_get(json_media, "fingerprint"), "type");
+
+	return res ? res : string_get(object_get(message_parsed_sdp_get(message), "fingerprint"), "type");
 }
 
 const char *respoke_message_fingerprint_hash_get(
 	const struct respoke_message *message, const char *type)
 {
 	struct ast_json *json_media;
+	const char *res;
 
 	if (json_media_get(message, type, &json_media)) {
 		return NULL;
 	}
 
-	return string_get(object_get(json_media, "fingerprint"), "hash");
+	res = string_get(object_get(json_media, "fingerprint"), "hash");
+
+	return res ? res : string_get(object_get(message_parsed_sdp_get(message), "fingerprint"), "hash");
 }
 
 enum respoke_status respoke_message_reason_get(const struct respoke_message *message)
@@ -446,24 +452,30 @@ const char *respoke_message_ice_ufrag_get(
 	const struct respoke_message *message, const char *type)
 {
 	struct ast_json *json_media;
+	const char *res;
 
 	if (json_media_get(message, type, &json_media)) {
 		return NULL;
 	}
 
-	return string_get(json_media, "iceUfrag");
+	res = string_get(json_media, "iceUfrag");
+
+	return res ? res : string_get(message_parsed_sdp_get(message), "iceUfrag");
 }
 
 const char *respoke_message_ice_pwd_get(
 	const struct respoke_message *message, const char *type)
 {
 	struct ast_json *json_media;
+	const char *res;
 
 	if (json_media_get(message, type, &json_media)) {
 		return NULL;
 	}
 
-	return string_get(json_media, "icePwd");
+	res = string_get(json_media, "icePwd");
+
+	return res ? res : string_get(message_parsed_sdp_get(message), "icePwd");
 }
 
 static int handle_ice_candidate(struct ast_json *json, struct ast_rtp_instance *instance)
