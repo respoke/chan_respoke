@@ -1098,7 +1098,9 @@ static int transaction_session_terminate(void *data)
 			session->session_id);
 
 		session->terminated = 1;
-		ast_queue_hangup_with_cause(session->channel, AST_CAUSE_SWITCH_CONGESTION);
+		if (session->channel) {
+			ast_queue_hangup_with_cause(session->channel, AST_CAUSE_SWITCH_CONGESTION);
+		}
 	}
 
 	ao2_ref(transaction, -1);
