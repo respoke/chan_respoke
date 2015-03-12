@@ -670,7 +670,7 @@ static struct ast_json *sdp_media_dtls_fingerprint_to_json(struct ast_rtp_engine
 }
 
 static struct ast_json *sdp_media_rtp_to_json(
-	int payload, const struct ast_format *format)
+	int payload, struct ast_format *format)
 {
 	const char *codec = ast_format_get_name(format);
 
@@ -678,7 +678,7 @@ static struct ast_json *sdp_media_rtp_to_json(
 		"{s:i,s:s,s:i}",
 		"payload", payload,
 		"codec", codec,
-		"rate", ast_format_get_sample_rate(format));
+		"rate", ast_rtp_lookup_sample_rate2(1, format, 0));
 }
 
 static struct ast_json *sdp_media_fmtp_to_json(
@@ -737,8 +737,8 @@ static int sdp_media_codecs_to_json(
 			 ast_format_cap_get_format(caps, i), ao2_cleanup);
 
 		if ((ast_format_get_type(format) != type) ||
-		    (payload = ast_rtp_codecs_payload_code(
-			    ast_rtp_instance_get_codecs(instance), 1, format, 0) == -1)) {
+		    ((payload = ast_rtp_codecs_payload_code(
+			    ast_rtp_instance_get_codecs(instance), 1, format, 0)) == -1)) {
 			continue;
 		}
 
