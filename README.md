@@ -22,8 +22,10 @@ are contained in the 'res' directory.
 The following programs and/or libaries need to be installed before compiling
 and installing the RMA:
 
-Asterisk (>= version 13.0.0)
-libcurl
+- libcurl
+- pjproject
+- - Asterisk (>= version 13.0.0)
+  - Required modules: res_rtp_asterisk
 
 ## Building and Installing
 
