@@ -672,7 +672,7 @@ static struct ast_json *sdp_media_dtls_fingerprint_to_json(struct ast_rtp_engine
 static struct ast_json *sdp_media_rtp_to_json(
 	int payload, struct ast_format *format)
 {
-	const char *codec = ast_format_get_name(format);
+	const char *codec = ast_rtp_lookup_mime_subtype2(1, format, 0, 0);
 
 	return ast_json_pack(
 		"{s:i,s:s,s:i}",
