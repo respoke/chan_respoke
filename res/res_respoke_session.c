@@ -44,6 +44,7 @@
 #include "asterisk/causes.h"
 #include "asterisk/uri.h"
 #include "asterisk/callerid.h"
+#include "asterisk/pbx.h"
 
 #include "asterisk/res_respoke_session.h"
 
@@ -819,6 +820,28 @@ int respoke_session_offer(struct respoke_session *session)
 
 int respoke_session_answer(struct respoke_session *session)
 {
+	if (session->channel)
+	{
+		ast_verbose("\n\n<-- Respoke Session Answer: %s -->\n\n", ast_channel_name(session->channel));
+
+		pbx_builtin_setvar_helper(session->channel, "respoke_session_local", session->local);
+		pbx_builtin_setvar_helper(session->channel, "respoke_session_local_type", session->local_type);
+		pbx_builtin_setvar_helper(session->channel, "respoke_session_local_connection", session->local_connection);
+		pbx_builtin_setvar_helper(session->channel, "respoke_session_remote", session->remote);
+		pbx_builtin_setvar_helper(session->channel, "respoke_session_remote_type", session->remote_type);
+		pbx_builtin_setvar_helper(session->channel, "respoke_session_remote_connection", session->remote_connection);
+		pbx_builtin_setvar_helper(session->channel, "respoke_session_remote_appid", session->remote_appid);
+		pbx_builtin_setvar_helper(session->channel, "respoke_session_id", session->session_id);
+
+		manager_event(EVENT_FLAG_SYSTEM, "respoke_session", "channel: %s\n"
+			"id: %s\nlocal: %s\nlocal_type: %s\nlocal_connection: %s\n"
+			"remote: %s\nremote_type: %s\nremote_connection: %s\nremote_appid: %s\r\n",
+			ast_channel_name(session->channel), session->session_id, session->local,
+			session->local_type, session->local_connection, session->remote, session->remote_type,
+			session->remote_connection, session->remote_appid);
+
+	}
+
 	int res = respoke_session_message_send_and_release(session,
 		respoke_message_create_answer(
 			session->transport, session->endpoint, session->rtp_ipv6,
