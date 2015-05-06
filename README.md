@@ -78,3 +78,28 @@ be heard and the call hung up.
 To uninstall all files associated with the example issue the following command:
 
     make uninstall-example
+
+## Asterisk Channel Variables
+
+You can use the following Respoke session information to manage them inside the asterisk channel:
+- respoke_session_local
+- respoke_session_local_type
+- respoke_session_local_connection
+- respoke_session_remote
+- respoke_session_remote_type
+- respoke_session_remote_connection
+- respoke_session_remote_appid
+- respoke_session_id
+
+Here it is a dialplan example in order to pass the "respoke_session_remote" inside an asterisk channel variable:
+
+exten => your_respoke_endpoint,1,Answer()
+same => n,NoOp(RESPOKE METADATA: ${respoke_session_remote})
+same => n,Ringing
+same => n,Wait(8)
+same => n,Playback(welcome)
+same => n,SayAlpha(${respoke_session_remote})
+same => n,Dial(SIP/300)
+same => n,Hangup()
+
+## AMI
