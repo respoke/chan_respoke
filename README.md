@@ -82,24 +82,47 @@ To uninstall all files associated with the example issue the following command:
 ## Asterisk Channel Variables
 
 You can use the following Respoke session information to manage them inside the asterisk channel:
-- respoke_session_local
-- respoke_session_local_type
-- respoke_session_local_connection
-- respoke_session_remote
-- respoke_session_remote_type
-- respoke_session_remote_connection
-- respoke_session_remote_appid
-- respoke_session_id
 
-Here it is a dialplan example in order to pass the "respoke_session_remote" inside an asterisk channel variable:
+- respoke\_session\_local
+- respoke\_session\_local\_type
+- respoke\_session\_local\_connection
+- respoke\_session\_remote
+- respoke\_session\_remote\_type
+- respoke\_session\_remote\_connection
+- respoke\_session\_remote\_appid
+- respoke\_session\_id
 
-exten => your_respoke_endpoint,1,Answer()
-same => n,NoOp(RESPOKE METADATA: ${respoke_session_remote})
-same => n,Ringing
-same => n,Wait(8)
-same => n,Playback(welcome)
-same => n,SayAlpha(${respoke_session_remote})
-same => n,Dial(SIP/300)
-same => n,Hangup()
+Here it is a dialplan example in order to pass the "respoke\_session\_remote" inside an asterisk channel variable:
+
+    exten => your_respoke_endpoint,1,Answer()
+    same => n,NoOp(RESPOKE METADATA: ${respoke_session_remote})
+    same => n,Ringing
+    same => n,Wait(8)
+    same => n,Playback(welcome)
+    same => n,SayAlpha(${respoke_session_remote})
+    same => n,Dial(SIP/300)
+    same => n,Hangup()
+
+In the above example, the "respoke\_session\_remote" information is played back to the caller using the Asterisk application SayAlpha.
 
 ## AMI
+
+The following Event is available on to the Asterisk Manager Interface:
+
+**Event: respoke_session**
+
+##### Example:
+
+    Event: respoke_session
+    Privilege: system,all
+    channel: RESPOKE/anonymous-00000006
+    id: 98B0F7D7-6AEC-4037-8250-8C5DFA7A2C11
+    local: your_respoke_endpoint
+    local_type: web
+    local_connection:
+    remote: ORDER12345
+    remote_type: web
+    remote_connection: 01749CDF-4BB0-41DB-8D52-30D25954D41A
+    remote_appid:
+
+In the above example, the AMI "respoke\_session" Event includes the respoke session information, in particular the remote field.
