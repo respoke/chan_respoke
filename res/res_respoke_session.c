@@ -824,16 +824,16 @@ int respoke_session_answer(struct respoke_session *session)
 	{
 		ast_verbose("\n\n<-- Respoke Session Answer: %s -->\n\n", ast_channel_name(session->channel));
 
-		pbx_builtin_setvar_helper(session->channel, "respoke_session_local", session->local);
-		pbx_builtin_setvar_helper(session->channel, "respoke_session_local_type", session->local_type);
-		pbx_builtin_setvar_helper(session->channel, "respoke_session_local_connection", session->local_connection);
-		pbx_builtin_setvar_helper(session->channel, "respoke_session_remote", session->remote);
-		pbx_builtin_setvar_helper(session->channel, "respoke_session_remote_type", session->remote_type);
-		pbx_builtin_setvar_helper(session->channel, "respoke_session_remote_connection", session->remote_connection);
-		pbx_builtin_setvar_helper(session->channel, "respoke_session_remote_appid", session->remote_appid);
-		pbx_builtin_setvar_helper(session->channel, "respoke_session_id", session->session_id);
+		pbx_builtin_setvar_helper(session->channel, "RESPOKE(local)", session->local);
+		pbx_builtin_setvar_helper(session->channel, "RESPOKE(local_type)", session->local_type);
+		pbx_builtin_setvar_helper(session->channel, "RESPOKE(local_connection)", session->local_connection);
+		pbx_builtin_setvar_helper(session->channel, "RESPOKE(remote)", session->remote);
+		pbx_builtin_setvar_helper(session->channel, "RESPOKE(remote_type)", session->remote_type);
+		pbx_builtin_setvar_helper(session->channel, "RESPOKE(remote_connection)", session->remote_connection);
+		pbx_builtin_setvar_helper(session->channel, "RESPOKE(remote_appid)", session->remote_appid);
+		pbx_builtin_setvar_helper(session->channel, "RESPOKE", session->session_id);
 
-		manager_event(EVENT_FLAG_SYSTEM, "respoke_session", "channel: %s\n"
+		manager_event(EVENT_FLAG_SYSTEM, "RespokeSession", "channel: %s\n"
 			"id: %s\nlocal: %s\nlocal_type: %s\nlocal_connection: %s\n"
 			"remote: %s\nremote_type: %s\nremote_connection: %s\nremote_appid: %s\r\n",
 			ast_channel_name(session->channel), session->session_id, session->local,
