@@ -83,27 +83,27 @@ To uninstall all files associated with the example issue the following command:
 
 You can use the following Respoke session information to manage them inside the asterisk channel:
 
-- RESPOKE
-- RESPOKE(local)
-- RESPOKE(local_type)
-- RESPOKE(local_connection)
-- RESPOKE(remote)
-- RESPOKE(remote_type)
-- RESPOKE(remote_connection)
-- RESPOKE(remote_appid)
+- RESPOKE_SESSION_LOCAL
+- RESPOKE_SESSION_LOCAL_TYPE
+- RESPOKE_SESSION_LOCAL_CONNECTION
+- RESPOKE_SESSION_REMOTE
+- RESPOKE_SESSION_REMOTE_TYPE
+- RESPOKE_SESSION_REMOTE_CONNECTION
+- RESPOKE_SESSION_REMOTE_APPID
+- RESPOKE_SESSION_ID
 
-Here it is a dialplan example in order to pass the "RESPOKE(remote)" inside an asterisk channel variable:
+Here it is a dialplan example in order to pass the "RESPOKE_SESSION_REMOTE" inside an asterisk channel variable:
 
     exten => your_respoke_endpoint,1,Answer()
-    same => n,NoOp(RESPOKE METADATA: ${RESPOKE(remote)})
+    same => n,NoOp(RESPOKE METADATA: ${RESPOKE_SESSION_REMOTE})
     same => n,Ringing
     same => n,Wait(8)
     same => n,Playback(welcome)
-    same => n,SayAlpha(${RESPOKE(remote)})
+    same => n,SayAlpha(${RESPOKE_SESSION_REMOTE})
     same => n,Dial(SIP/300)
     same => n,Hangup()
 
-In the above example, the "RESPOKE(remote)" information is played back to the caller using the Asterisk application SayAlpha.
+In the above example, the "RESPOKE_SESSION_REMOTE" information is played back to the caller using the Asterisk application SayAlpha.
 
 ## AMI
 

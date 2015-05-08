@@ -824,14 +824,14 @@ int respoke_session_answer(struct respoke_session *session)
 	{
 		ast_verbose("\n\n<-- Respoke Session Answer: %s -->\n\n", ast_channel_name(session->channel));
 
-		pbx_builtin_setvar_helper(session->channel, "RESPOKE(local)", session->local);
-		pbx_builtin_setvar_helper(session->channel, "RESPOKE(local_type)", session->local_type);
-		pbx_builtin_setvar_helper(session->channel, "RESPOKE(local_connection)", session->local_connection);
-		pbx_builtin_setvar_helper(session->channel, "RESPOKE(remote)", session->remote);
-		pbx_builtin_setvar_helper(session->channel, "RESPOKE(remote_type)", session->remote_type);
-		pbx_builtin_setvar_helper(session->channel, "RESPOKE(remote_connection)", session->remote_connection);
-		pbx_builtin_setvar_helper(session->channel, "RESPOKE(remote_appid)", session->remote_appid);
-		pbx_builtin_setvar_helper(session->channel, "RESPOKE", session->session_id);
+		pbx_builtin_setvar_helper(session->channel, "RESPOKE_SESSION_LOCAL", session->local);
+		pbx_builtin_setvar_helper(session->channel, "RESPOKE_SESSION_LOCAL_TYPE", session->local_type);
+		pbx_builtin_setvar_helper(session->channel, "RESPOKE_SESSION_LOCAL_CONNECTION", session->local_connection);
+		pbx_builtin_setvar_helper(session->channel, "RESPOKE_SESSION_REMOTE", session->remote);
+		pbx_builtin_setvar_helper(session->channel, "RESPOKE_SESSION_REMOTE_TYPE", session->remote_type);
+		pbx_builtin_setvar_helper(session->channel, "RESPOKE_SESSION_REMOTE_CONNECTION", session->remote_connection);
+		pbx_builtin_setvar_helper(session->channel, "RESPOKE_SESSION_REMOTE_APPID", session->remote_appid);
+		pbx_builtin_setvar_helper(session->channel, "RESPOKE_SESSION_ID", session->session_id);
 
 		manager_event(EVENT_FLAG_SYSTEM, "RespokeSession", "channel: %s\n"
 			"id: %s\nlocal: %s\nlocal_type: %s\nlocal_connection: %s\n"
