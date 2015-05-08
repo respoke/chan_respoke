@@ -820,9 +820,8 @@ int respoke_session_offer(struct respoke_session *session)
 
 int respoke_session_answer(struct respoke_session *session)
 {
-	if (session->channel)
-	{
-		ast_verbose("\n\n<-- Respoke Session Answer: %s -->\n\n", ast_channel_name(session->channel));
+	if (session->channel) {
+		ast_verb(4, "\n\n<-- Respoke Session Answer: %s -->\n\n", ast_channel_name(session->channel));
 
 		pbx_builtin_setvar_helper(session->channel, "RESPOKE_SESSION_LOCAL", session->local);
 		pbx_builtin_setvar_helper(session->channel, "RESPOKE_SESSION_LOCAL_TYPE", session->local_type);
@@ -833,9 +832,9 @@ int respoke_session_answer(struct respoke_session *session)
 		pbx_builtin_setvar_helper(session->channel, "RESPOKE_SESSION_REMOTE_APPID", session->remote_appid);
 		pbx_builtin_setvar_helper(session->channel, "RESPOKE_SESSION_ID", session->session_id);
 
-		manager_event(EVENT_FLAG_SYSTEM, "RespokeSession", "channel: %s\n"
-			"id: %s\nlocal: %s\nlocal_type: %s\nlocal_connection: %s\n"
-			"remote: %s\nremote_type: %s\nremote_connection: %s\nremote_appid: %s\r\n",
+		manager_event(EVENT_FLAG_SYSTEM, "RespokeSession", "Channel: %s\n"
+			"Id: %s\nLocal: %s\nLocalType: %s\nLocalConnection: %s\n"
+			"Remote: %s\nRemoteType: %s\nRemoteConnection: %s\nRemoteAppId: %s\r\n",
 			ast_channel_name(session->channel), session->session_id, session->local,
 			session->local_type, session->local_connection, session->remote, session->remote_type,
 			session->remote_connection, session->remote_appid);

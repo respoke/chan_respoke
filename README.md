@@ -115,14 +115,14 @@ The following Event is available on to the Asterisk Manager Interface:
 
     Event: RespokeSession
     Privilege: system,all
-    channel: RESPOKE/anonymous-00000006
-    id: 98B0F7D7-6AEC-4037-8250-8C5DFA7A2C11
-    local: your_respoke_endpoint
-    local_type: web
-    local_connection:
-    remote: ORDER12345
-    remote_type: web
-    remote_connection: 01749CDF-4BB0-41DB-8D52-30D25954D41A
-    remote_appid:
+    Channel: RESPOKE/anonymous-00000006
+    Id: 98B0F7D7-6AEC-4037-8250-8C5DFA7A2C11
+    Local: your_respoke_endpoint
+    LocalType: web
+    LocalConnection:
+    Remote: ORDER12345
+    RemoteType: web
+    RemoteConnection: 01749CDF-4BB0-41DB-8D52-30D25954D41A
+    RemoteAppId:
 
 In the above example, the AMI "RespokeSession" Event includes the respoke session information, in particular the remote field.
