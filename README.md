@@ -23,9 +23,21 @@ The following programs and/or libaries need to be installed before compiling
 and installing the RMA:
 
 - libcurl
-- pjproject
-- - Asterisk (>= version 13.0.0)
-  - Required modules: res_rtp_asterisk
+- [pjproject][]
+- Asterisk (>= version 13.0.0)
+  - Required modules: `res_rtp_asterisk`
+
+ [pjproject]: https://wiki.asterisk.org/wiki/x/J4GLAQ
+
+### Certified Asterisk
+
+Asterisk versions prior to 13.2.0, including 13.1-cert2, have a [DTLS issue][]
+when connecting to Respoke, caused by a security patch in OpenSSL 1.0.1k. Please
+upgrade to a newer version of Asterisk, or apply [this patch][] to correct the
+issue with DTLS.
+
+ [DTLS issue]: https://issues.asterisk.org/jira/browse/ASTERISK-24711
+ [this patch]: https://code.asterisk.org/code/rdiff/asterisk?csid=e0461290d0c35e643070c8ed98f4b7e95345a708&u&N
 
 ## Building and Installing
 
