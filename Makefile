@@ -95,18 +95,22 @@ debug: all
 tests: CFLAGS+=-DTEST_FRAMEWORK
 tests: debug $(TEST_TARGETS)
 
-install-example:
+install-keys:
+	openssl genrsa -out /tmp/respoke.key
+	openssl req -new -key /tmp/respoke.key -out /tmp/respoke.csr -subj "/CN=Respoke"
+	openssl x509 -req -days 3650 -in /tmp/respoke.csr -signkey /tmp/respoke.key -out /tmp/respoke.crt
+	cat /tmp/respoke.key /tmp/respoke.crt > /tmp/respoke.pem
+	install -m 755 -d $(AST_CONF_DIR)/keys
+	install -m 644 /tmp/respoke.pem $(AST_CONF_DIR)/keys/
+	rm -f /tmp/respoke.{key,csr,crt,pem}
+
+uninstall-keys:
+	rm -f $(AST_CONF_DIR)/keys/respoke.pem
+
+install-example: install-keys
 	install -m 644 example/*.conf $(AST_CONF_DIR)
+	sed "s#/etc/asterisk#$(AST_CONF_DIR)#" example/respoke.conf > $(AST_CONF_DIR)/respoke.conf
 	install -m 644 example/sounds/respoke* $(AST_SOUNDS_DIR)
-	mkdir -p $(AST_CONF_DIR)/rma_example_keys
-	install -m 644 example/keys/rma* $(AST_CONF_DIR)/rma_example_keys
-	@echo ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;"
-	@echo ";;; WARNING!!"
-	@echo ";;;"
-	@echo ";;; An example certificate authority and client certificate have been"
-	@echo ";;; installed under $(AST_CONF_DIR)/rma_example_keys. They are for"
-	@echo ";;; example use only. DO NOT use in a production environment."
-	@echo ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;"
 
 uninstall-example:
 	$(RM) $(AST_CONF_DIR)/respoke.conf
@@ -129,4 +133,5 @@ uninstall:
 	$(RM) $(AST_MODULES_DIR)/*socket_io*.so
 	$(RM) $(AST_MODULES_DIR)/*respoke*.so
 
-.PHONY: all clean install uninstall debug tests install-example uninstall-example
+.PHONY: all clean install uninstall debug tests install-example \
+	uninstall-example install-keys uninstall-keys

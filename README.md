@@ -23,9 +23,21 @@ The following programs and/or libaries need to be installed before compiling
 and installing the RMA:
 
 - libcurl
-- pjproject
-- - Asterisk (>= version 13.0.0)
-  - Required modules: res_rtp_asterisk
+- [pjproject][]
+- Asterisk (>= version 13.0.0)
+  - Required modules: `res_rtp_asterisk`
+
+ [pjproject]: https://wiki.asterisk.org/wiki/x/J4GLAQ
+
+### Certified Asterisk
+
+Asterisk versions prior to 13.2.0, including 13.1-cert2, have a [DTLS issue][]
+when connecting to Respoke, caused by a security patch in OpenSSL 1.0.1k. Please
+upgrade to a newer version of Asterisk, or apply [this patch][] to correct the
+issue with DTLS.
+
+ [DTLS issue]: https://issues.asterisk.org/jira/browse/ASTERISK-24711
+ [this patch]: https://code.asterisk.org/code/rdiff/asterisk?csid=e0461290d0c35e643070c8ed98f4b7e95345a708&u&N
 
 ## Building and Installing
 
@@ -52,6 +64,15 @@ the Asterisk installation configuration directory (typically /etc/asterisk/).
 The respoke configuration file follows the same rules and similar patterns to
 that of a typical Asterisk configuration file.  See the 'respoke.conf.sample'
 file for more information.
+
+### DTLS Certificate
+
+The usual Asterisk script for generating a certificate (`ast_tls_cert`)
+generates a certificate chain, which can cause DTLS packets to be larger than
+the typical MTU. This fragmentation can cause data loss in some networks.
+
+It is recommended to install a small self-signed certificate instead. This can
+be done by `make install-keys`, which creates `/etc/asterisk/keys/respoke.pem`.
 
 ## Example
 
