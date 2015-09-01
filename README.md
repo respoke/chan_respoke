@@ -65,6 +65,15 @@ The respoke configuration file follows the same rules and similar patterns to
 that of a typical Asterisk configuration file.  See the 'respoke.conf.sample'
 file for more information.
 
+### DTLS Certificate
+
+The usual Asterisk script for generating a certificate (`ast_tls_cert`)
+generates a certificate chain, which can cause DTLS packets to be larger than
+the typical MTU. This fragmentation can cause data loss in some networks.
+
+It is recommended to install a small self-signed certificate instead. This can
+be done by `make install-keys`, which creates `/etc/asterisk/keys/respoke.pem`.
+
 ## Example
 
 A basic example configuration and setup can be found under the "example"
