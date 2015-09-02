@@ -227,8 +227,7 @@ static int message_dispatcher(void *data)
 	}
 
 	if (!found) {
-		respoke_message_send_error_from_message(
-			message, NULL, NULL, "Unknown signal type received");
+		ast_log(LOG_WARNING, "Unknown signal type received: %s\n", signal_type);
 	}
 
 	return 0;
