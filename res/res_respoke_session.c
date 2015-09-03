@@ -1087,6 +1087,18 @@ struct respoke_message_handler error_handler = {
 	.receive_message = receive_error
 };
 
+static unsigned int receive_connect(struct respoke_transaction *transaction, struct respoke_message *message)
+{
+	/* Informational message; no-op */
+	return 0;
+}
+
+struct respoke_message_handler connect_handler = {
+	.types = "signal",
+	.signaltypes = "connect",
+	.receive_message = receive_connect
+};
+
 /*! \brief Task which terminates the session */
 static int transaction_session_terminate(void *data)
 {
@@ -1166,7 +1178,8 @@ static int load_module(void)
 	    respoke_register_message_handler(&ice_candidates_handler) ||
 #endif
 	    respoke_register_message_handler(&bye_handler) ||
-	    respoke_register_message_handler(&error_handler)) {
+	    respoke_register_message_handler(&error_handler) ||
+	    respoke_register_message_handler(&connect_handler)) {
 		unload_module();
 		return AST_MODULE_LOAD_FAILURE;
 	}
