@@ -39,6 +39,28 @@ issue with DTLS.
  [DTLS issue]: https://issues.asterisk.org/jira/browse/ASTERISK-24711
  [this patch]: https://code.asterisk.org/code/rdiff/asterisk?csid=e0461290d0c35e643070c8ed98f4b7e95345a708&u&N
 
+### PJSIP configuration
+
+WebRTC endpoints may offer more ICE candidates than PJSIP's default limits.
+These can be configured when PJSIP is compiled, and Asterisk must be recompiled
+when they are changed.
+
+When building PJSIP from source, immediately after running `./configure`, create
+the file `pjlib/include/pj/config_site.h` with the following contents. The
+actual values for `PJ_ICE_MAX_CAND` and `PJ_ICE_MAX_CHECKS` may vary depending
+on your use case, but these are some good defaults for WebRTC.
+
+```c
+#ifndef __PJ_CONFIG_SITE_H__
+#define __PJ_CONFIG_SITE_H__
+
+/* Defaults too low for WebRTC */
+#define PJ_ICE_MAX_CAND 32
+#define PJ_ICE_MAX_CHECKS (PJ_ICE_MAX_CAND * 2)
+
+#endif /* __PJ_CONFIG_SITE_H__ */
+```
+
 ## Building and Installing
 
 In order to build the RMA without errors the necessary dependencies need to be
