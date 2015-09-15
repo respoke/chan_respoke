@@ -49,9 +49,6 @@
 /*! \brief number of namespace buckets */
 #define MAX_NAMESPACE_BUCKETS 5
 
-/*! Scheduling context for heartbeats */
-static struct ast_sched_context *sched;
-
 /*! \brief Details for a socket IO event. */
 struct socket_io_event {
 	/*! called when named event needs to be raised */
@@ -382,23 +379,6 @@ static int socket_io_namespace_connect(void *obj, void *arg, int flags)
 	return 0;
 }
 
-struct sched_heartbeat_data {
-	/*! heartbeat's schedule id */
-	int id;
-	/*! heartbeat's schedule timeout */
-	int timeout;
-	/*! transport used to send heartbeat */
-	struct socket_io_transport *transport;
-};
-
-static void sched_heartbeat_data_destroy(void *obj)
-{
-	struct sched_heartbeat_data* data = obj;
-	ao2_cleanup(data->transport);
-}
-
-static void socket_io_unschedule_heartbeat(struct ast_socket_io_session *session);
-
 /*! \brief Details for a socket io session. */
 struct ast_socket_io_session {
 	/*! unique session id */
@@ -408,15 +388,13 @@ struct ast_socket_io_session {
 	/*! closing timeout */
 	unsigned int closing_timeout;
 	/*! negotiated heartbeat timeout */
-	unsigned int heartbeat_timeout;
+	unsigned int heartbeat_timeout_secs;
 	/*! uri to connected to */
 	struct ast_uri *uri;
 	/*! the client/server negotiated transport to use */
 	struct socket_io_transport *transport;
 	/*! collection of path mapped namespaces */
 	struct ao2_container *namespaces;
-	/*! data passed to the heartbeat scheduler collection of path mapped namespaces */
-	struct sched_heartbeat_data *heartbeat_data;
 	/*! flag set when the session needs to stop */
 	int stop;
 };
@@ -425,8 +403,6 @@ struct ast_socket_io_session {
 static void socket_io_session_destroy(void *obj)
 {
 	struct ast_socket_io_session *session = obj;
-
-	socket_io_unschedule_heartbeat(session);
 
 	ao2_callback(session->namespaces, OBJ_NODATA,
 		     socket_io_namespace_disconnect, NULL);
@@ -480,6 +456,7 @@ struct ast_uri *ast_socket_io_uri(
 
 void ast_socket_io_stop(struct ast_socket_io_session *session)
 {
+	/* TODO: we should break the repl loop, too */
 	session->stop = 1;
 }
 
@@ -595,9 +572,10 @@ static enum ast_socket_io_result socket_io_send(
 
 static enum ast_socket_io_result socket_io_recv(
 	struct socket_io_transport *transport, enum socket_io_message_type *type,
-	unsigned int *id, struct ast_str **path, struct ast_str **data)
+	unsigned int *id, struct ast_str **path, struct ast_str **data, unsigned int timeout_secs)
 {
 	char *p1, *p2;
+	int res;
 	RAII_VAR(char *, packet, NULL, ast_free);
 
 	*type = -1;
@@ -605,7 +583,12 @@ static enum ast_socket_io_result socket_io_recv(
 	ast_str_reset(*path);
 	ast_str_reset(*data);
 
-	if (transport->transport->recv(transport->obj, &packet) < 0) {
+	res = transport->transport->recv(transport->obj, &packet, timeout_secs);
+	if (res == 0) {
+		ast_log(LOG_WARNING, "Socket IO heartbeat timeout\n");
+		return SOCKET_IO_RECV_ERROR;
+	} else if (res < 0) {
+		ast_log(LOG_WARNING, "Socket IO recv error\n");
 		return SOCKET_IO_RECV_ERROR;
 	}
 
@@ -666,59 +649,6 @@ static enum ast_socket_io_result socket_io_recv(
 	}
 
 	ast_str_set(path, 0, "%s", p1);
-	return SOCKET_IO_OK;
-}
-
-static int on_scheduled_heartbeat(const void *obj)
-{
-	struct sched_heartbeat_data* data = (struct sched_heartbeat_data *)obj;
-
-	if (socket_io_send(data->transport, SOCKET_IO_HEARTBEAT,
-			   NULL, NULL, NULL, NULL) != SOCKET_IO_OK) {
-		ao2_ref(data, -1);
-		return 0;
-	}
-	return data->timeout;
-}
-
-static void socket_io_unschedule_heartbeat(struct ast_socket_io_session *session)
-{
-	if (session->heartbeat_data && session->heartbeat_data->id > 0) {
-		AST_SCHED_DEL_UNREF(sched, session->heartbeat_data->id,
-				    ao2_cleanup(session->heartbeat_data));
-	}
-	ao2_cleanup(session->heartbeat_data);
-	session->heartbeat_data = NULL;
-}
-
-static enum ast_socket_io_result socket_io_schedule_heartbeat(
-	struct ast_socket_io_session *session)
-{
-	/* start the heartbeat if timeout given */
-	if (!session->heartbeat_timeout) {
-		return SOCKET_IO_OK;
-	}
-
-	socket_io_unschedule_heartbeat(session);
-
-	if (!(session->heartbeat_data = ao2_alloc(
-		      sizeof(*session->heartbeat_data),
-		      sched_heartbeat_data_destroy))) {
-		return SOCKET_IO_ALLOC_ERROR;
-	}
-
-	session->heartbeat_data->timeout = (int)(session->heartbeat_timeout - 30) * 1000;
-	session->heartbeat_data->transport = ao2_bump(session->transport);
-
-	/* add a ref since the scheduler will point to it too */
-	ao2_ref(session->heartbeat_data, +1);
-	if ((session->heartbeat_data->id = ast_sched_add_variable(
-		      sched, session->heartbeat_data->timeout,
-		      on_scheduled_heartbeat, session->heartbeat_data, 1)) < 0) {
-		ao2_ref(session->heartbeat_data, -1);
-		return SOCKET_IO_SCHED_ERROR;
-	}
-
 	return SOCKET_IO_OK;
 }
 
@@ -907,9 +837,14 @@ static void socket_io_on_heartbeat(struct ast_socket_io_namespace *ns)
 {
 	ast_debug(3, "Socket IO on heartbeat: %s\n", ns->path);
 
-	if (ns->on_heartbeat) {
-		ns->on_heartbeat(ns);
+	if (!ns->on_heartbeat) {
+		/* By default, respond with a heartbeat */
+		socket_io_send(ns->session->transport, SOCKET_IO_HEARTBEAT,
+			ns->path, NULL, NULL, NULL);
+		return;
 	}
+
+	ns->on_heartbeat(ns);
 }
 
 static void socket_io_on_message(struct ast_socket_io_namespace *ns,
@@ -1039,11 +974,12 @@ enum ast_socket_io_result ast_socket_io_repl(struct ast_socket_io_session *sessi
 
 	while (!session->stop && (res = socket_io_recv(
 					  session->transport, &type, &id,
-					  &path, &data)) != SOCKET_IO_RECV_ERROR) {
+					  &path, &data, session->heartbeat_timeout_secs)) != SOCKET_IO_RECV_ERROR) {
 		struct ast_socket_io_namespace *ns;
 
 		if (res != SOCKET_IO_OK) {
 			/* received a malformed message so skip */
+			ast_log(LOG_WARNING, "Socket IO malformed message: %d (%p)\n", res, session);
 			continue;
 		}
 
@@ -1093,8 +1029,6 @@ enum ast_socket_io_result ast_socket_io_repl(struct ast_socket_io_session *sessi
 	ast_free(path);
 	ast_free(data);
 
-	socket_io_unschedule_heartbeat(session);
-
 	return session->stop ? SOCKET_IO_OK : res;
 }
 
@@ -1121,7 +1055,7 @@ static size_t client_session_create(void *ptr, size_t size, size_t nmemb, void *
 
 	if ((end - start > 1)) {
 		ast_copy_string(timeout, start, end - start + 1);
-		if (sscanf(timeout, "%u", &session->heartbeat_timeout) != 1) {
+		if (sscanf(timeout, "%u", &session->heartbeat_timeout_secs) != 1) {
 			ast_log(LOG_ERROR, "Could not read client session heartbeat "
 				"timeout: %s", timeout);
 			return 0;
@@ -1233,33 +1167,17 @@ enum ast_socket_io_result ast_socket_io_client_connect(
 	ao2_callback(session->namespaces, OBJ_NODATA,
 		     socket_io_namespace_connect, NULL);
 
-	if ((res = socket_io_schedule_heartbeat(session)) != SOCKET_IO_OK) {
-		ast_log(LOG_WARNING, "Unable to schedule heartbeart on client "
-			"host '%s'\n", ast_uri_host(session->uri));
-		return res;
-	}
-
 	return SOCKET_IO_OK;
 }
 
 static int load_module(void)
 {
-	if ((!(sched = ast_sched_context_create()))) {
-		return AST_MODULE_LOAD_FAILURE;
-	}
-
-	if (ast_sched_start_thread(sched)) {
-		ast_sched_context_destroy(sched);
-		return AST_MODULE_LOAD_FAILURE;
-	}
-
 	curl_global_init(CURL_GLOBAL_ALL);
 	return AST_MODULE_LOAD_SUCCESS;
 }
 
 static int unload_module(void)
 {
-	ast_sched_context_destroy(sched);
 	curl_global_cleanup();
 	return 0;
 }

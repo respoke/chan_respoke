@@ -89,7 +89,7 @@ struct ast_socket_io_transport {
 	/*!
 	 * \brief Receive data over the transport.
 	 */
-	int (*recv)(void *obj, char **buf);
+	int (*recv)(void *obj, char **buf, unsigned int timeout_secs);
 	/*!
 	 * \brief Retrieves the transport's module.
 	 */
