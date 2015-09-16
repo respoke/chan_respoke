@@ -84,6 +84,4 @@ allow=ulaw
 app=example
 transport=example
 dtls_verify=fingerprint
-dtls_cert_file=/etc/asterisk/keys/asterisk.pem
-dtls_ca_file=/etc/asterisk/keys/ca.crt
 dtls_setup=actpass
