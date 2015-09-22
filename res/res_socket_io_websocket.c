@@ -94,15 +94,23 @@ static int transport_websocket_send(void *obj, const char *data)
 	return ast_websocket_write_string(obj, data);
 }
 
-static int transport_websocket_recv(void *obj, char **data)
+static int transport_websocket_recv(void *obj, char **data, unsigned int timeout_secs)
 {
 	int res;
+	int timeout_ms = timeout_secs * 1000;
 
-	res = ast_wait_for_input(ast_websocket_fd(obj), -1);
-	if (res <= 0) {
+	/* In Socket.io, 0 means forever... */
+	if (timeout_ms == 0) {
+		timeout_ms = -1;
+	}
+
+	res = ast_wait_for_input(ast_websocket_fd(obj), timeout_ms);
+	if (res < 0) {
 		ast_log(LOG_WARNING, "WebSocket poll error: %s\n",
 			strerror(errno));
 		return -1;
+	} else if (res == 0) {
+		return 0;
 	}
 
 	res = ast_websocket_read_string(obj, data);
