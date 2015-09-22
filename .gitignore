@@ -3,3 +3,7 @@
 *.so
 *.i
 TAGS
+.version
+res/res_respoke/respoke_version.c
+chan_respoke*.tar
+chan_respoke*.tar.gz

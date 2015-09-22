@@ -1,0 +1,20 @@
+#!/bin/sh
+
+#
+# Update the .version file, if necessary
+#
+
+set -e
+
+if test -d .git; then
+    VERSION=$(git describe --always)
+else
+    VERSION=unknown
+fi
+
+if test -f .version && test "${VERSION}" = "$(cat .version)"; then
+    # .version file up to date; exit
+    exit 0
+fi
+
+echo "${VERSION}" > .version

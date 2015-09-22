@@ -1,0 +1,20 @@
+#!/bin/sh
+
+#
+# Build chan_respoke tarball
+#
+
+VERSION=$(git describe --always)
+PREFIX=chan_respoke-${VERSION}
+
+set -ex
+
+# shenanigans for a portable tar --transform
+WORKDIR=$(mktemp -d /tmp/chan_respoke.XXXXXX)
+trap "rm -rf ${WORKDIR}" EXIT
+
+ln -sf $(pwd) ${WORKDIR}/${PREFIX}
+
+tar -C ${WORKDIR} -czf ${PREFIX}.tar.gz \
+    ${PREFIX}/.version \
+    $(git ls-files | sed "s#^#${PREFIX}/#")

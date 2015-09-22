@@ -49,7 +49,7 @@ $(if $(shell build_tools/get_asterisk_version $(AST_EXECS_DIR) $(AST_VERSION)), 
 RES_RESPOKE_DIR=res/res_respoke
 RES_RESPOKE_TARGET=res/res_respoke.so
 RES_RESPOKE_SRC=$(RES_RESPOKE_TARGET:.so=.c)
-RES_RESPOKE_SRCS=$(wildcard $(RES_RESPOKE_DIR)/*.c)
+RES_RESPOKE_SRCS=$(wildcard $(RES_RESPOKE_DIR)/*.c) res/res_respoke/respoke_version.c
 RES_RESPOKE_OBJS=$(RES_RESPOKE_SRCS:.c=.o) $(RES_RESPOKE_TARGET:.so=.o)
 
 # test modules
@@ -123,6 +123,11 @@ clean:
 	find . -type f -name "*.o" -delete
 	find . -type f -name "*.so" -delete
 
+distclean: clean
+	rm -f .version
+	rm -f res/res_respoke/respoke_version.c
+	rm -f chan_respoke*.tar.gz
+
 install: all
 	install -m 644 include/asterisk/*.h $(AST_INCLUDE_DIR)
 	find . -type f -name "*.so" -exec install -m 755 {} $(AST_MODULES_DIR) \;
@@ -133,5 +138,14 @@ uninstall:
 	$(RM) $(AST_MODULES_DIR)/*socket_io*.so
 	$(RM) $(AST_MODULES_DIR)/*respoke*.so
 
+dist: .version
+	build_tools/make_dist
+
+.version:
+	@build_tools/make_version
+
+res/res_respoke/respoke_version.c: .version
+	build_tools/make_version_c > $@
+
 .PHONY: all clean install uninstall debug tests install-example \
-	uninstall-example install-keys uninstall-keys
+	uninstall-example install-keys uninstall-keys .version dist distclean

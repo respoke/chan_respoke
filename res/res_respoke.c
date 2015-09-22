@@ -28,8 +28,10 @@
 #include "asterisk/respoke.h"
 #include "res_respoke/include/respoke_private.h"
 #include "res_respoke/include/respoke_system.h"
+#include "res_respoke/include/respoke_version.h"
 
 #include "asterisk/astobj2.h"
+#include "asterisk/cli.h"
 #include "asterisk/module.h"
 #include "asterisk/sorcery.h"
 #include "asterisk/threadpool.h"
@@ -119,9 +121,33 @@ int respoke_push_task_synchronous(struct ast_taskprocessor *serializer, int (*re
 	return std.fail;
 }
 
+static char *cli_show_version(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
+{
+	switch (cmd) {
+	case CLI_INIT:
+		e->command = "respoke show version";
+		e->usage =
+			"Usage: respoke show version\n"
+			"       Shows version of res_respoke.\n";
+		return NULL;
+	case CLI_GENERATE:
+		return NULL;
+	}
+
+	ast_cli(a->fd, "chan_respoke %s\n", respoke_get_version());
+	return CLI_SUCCESS;
+}
+
+
+static struct ast_cli_entry cli_respoke_main[] = {
+	AST_CLI_DEFINE(cli_show_version, "Shows version of res_respoke")
+};
+
 static int load_module(void)
 {
 	struct ast_threadpool_options options;
+
+	ast_cli_register_multiple(cli_respoke_main, ARRAY_LEN(cli_respoke_main));
 
 	if (respoke_initialize_configuration()) {
 		ast_log(LOG_ERROR, "Failed to initialize Respoke configuration. Aborting load\n");
@@ -151,6 +177,7 @@ static int reload_module(void)
 
 static int unload_module(void)
 {
+	ast_cli_unregister_multiple(cli_respoke_main, ARRAY_LEN(cli_respoke_main));
 	ast_threadpool_shutdown(respoke_threadpool);
 	respoke_destroy_configuration();
 	return 0;
