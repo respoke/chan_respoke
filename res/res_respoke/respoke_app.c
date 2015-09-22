@@ -25,7 +25,6 @@
 
 #include "asterisk.h"
 
-#include "asterisk/cli.h"
 #include "asterisk/format.h"
 #include "asterisk/format_cap.h"
 #include "asterisk/sorcery.h"

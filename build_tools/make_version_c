@@ -1,0 +1,25 @@
+#!/bin/sh
+
+#
+# Create a version header from a .version file.
+#
+
+RESPOKE_VERSION=$(cat .version)
+
+cat <<EOF
+/*
+ * respoke_version.c
+ * Automagically generated
+ */
+
+#include "asterisk.h"
+
+#include "respoke_version.h"
+
+static const char respoke_version[] = "${RESPOKE_VERSION}";
+
+const char *respoke_get_version(void)
+{
+	return respoke_version;
+}
+EOF
