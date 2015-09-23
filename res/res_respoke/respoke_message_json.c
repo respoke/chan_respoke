@@ -37,6 +37,7 @@
 #include "asterisk/respoke_message.h"
 #include "asterisk/respoke_transport.h"
 #include "include/respoke_app.h"
+#include "include/respoke_sdk_header.h"
 
 #define HEADER "header"
 #define HEADER_TYPE "type"
@@ -1232,15 +1233,19 @@ int respoke_message_sail(struct respoke_message *message)
 {
 	struct ast_json *obj, *headers;
 	struct ast_variable *header;
+	char sdk_header[80] = "";
 
 	/* In case we need to retransmit don't re-sail the message */
 	if (message->sailed) {
 		return 0;
 	}
 
+	respoke_get_sdk_header(sdk_header, sizeof(sdk_header));
+
 	if (!(headers = ast_json_pack(
-		      "{s:s}",
-		      "App-Secret", message->transport->app_secret))) {
+		      "{s:s,s:s}",
+		      "App-Secret", message->transport->app_secret,
+		      "Respoke-SDK", sdk_header))) {
 		return -1;
 	}
 
