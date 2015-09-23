@@ -41,6 +41,7 @@
 #include "asterisk/respoke_transport.h"
 #include "include/respoke_private.h"
 #include "include/respoke_app.h"
+#include "include/respoke_sdk_header.h"
 
 struct endpoint_identifier_list {
 	const struct respoke_endpoint_identifier *identifier;
@@ -229,6 +230,8 @@ static int respoke_endpoint_apply(const struct ast_sorcery *sorcery, void *obj)
 	struct respoke_transport *transport;
 	char *name;
 	struct ast_uri *uri;
+	char sdk_header[80] = "";
+	char encoded_sdk_header[180] = "";
 
 	if (!endpoint->register_with_service) {
 		/* This is done in case the configuration for the endpoint goes from register with service
@@ -303,13 +306,18 @@ static int respoke_endpoint_apply(const struct ast_sorcery *sorcery, void *obj)
 			endpoint->state->transport->uri, ast_sorcery_object_get_id(endpoint));
 		return -1;
 	}
-	ast_string_field_build(endpoint->state->transport, uri, "%s%s%s%s%s/?app-secret=%s",
+
+	respoke_get_sdk_header(sdk_header, sizeof(sdk_header));
+	ast_uri_encode(sdk_header, encoded_sdk_header, sizeof(encoded_sdk_header), ast_uri_http);
+	ast_string_field_build(endpoint->state->transport, uri, "%s%s%s%s%s/?app-secret=%s&Respoke-SDK=%s",
 		S_OR(ast_uri_scheme(uri), ""),
 		!ast_strlen_zero(ast_uri_scheme(uri)) ? "://" : "",
 		ast_uri_host(uri),
 		!ast_strlen_zero(ast_uri_port(uri)) ? ":" : "",
 		S_OR(ast_uri_port(uri), ""),
-		app->secret);
+		app->secret, 
+		encoded_sdk_header);
+
 	ao2_ref(uri, -1);
 	ast_string_field_set(endpoint->state->transport, app_secret, app->secret);
 
