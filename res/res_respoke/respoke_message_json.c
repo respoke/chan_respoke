@@ -64,6 +64,8 @@
 #define BODY_STATUS "status"
 #define BODY_DETAIL "detail"
 
+#define METADATA "metadata"
+
 #define SIGNAL "signal"
 
 #define REDIRECTIONINFO "redirectionInfo"
@@ -238,6 +240,10 @@ const char *respoke_message_connection_id_get(const struct respoke_message *mess
 	return string_get(object_get(message->json, BODY), BODY_CONNECTION_ID);
 }
 
+struct ast_json *respoke_message_metadata_get(const struct respoke_message *message)
+{
+	return object_get(object_get(message->json, BODY), METADATA);
+}
 
 static struct ast_json *message_parsed_sdp_get(const struct respoke_message *message)
 {

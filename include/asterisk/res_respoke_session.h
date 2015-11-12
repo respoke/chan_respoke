@@ -72,8 +72,10 @@ struct respoke_session {
 	struct ast_channel *channel;
 	/*! valid capabilities for the session */
 	struct ast_format_cap *capabilities;
-	/* session endpoint identity */
+	/*! session endpoint identity */
 	struct ast_party_id party_id;
+	/*! session metadata */
+	struct ast_json *metadata;
 };
 
 /*!
@@ -90,13 +92,15 @@ struct respoke_session {
  * \param to_appid the to application id
  * \param session_id the id of the session
  * \param caps capabilities the session possibly supports
+ * \param metadata the session metadata
  * \retval A session object.
  */
 struct respoke_session *respoke_session_create(
 	struct respoke_transport *transport, struct respoke_endpoint *endpoint,
 	const char *from, const char *from_type, const char *from_connection,
 	const char *to, const char *to_type, const char *to_connection,
-	const char *to_appid, const char *session_id, struct ast_format_cap *caps);
+	const char *to_appid, const char *session_id, struct ast_format_cap *caps,
+	struct ast_json *metadata);
 
 /*!
  * \brief Retrieve the incoming dialplan destination extension.
