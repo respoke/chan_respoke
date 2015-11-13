@@ -585,6 +585,10 @@ static void session_destroy(void *obj)
 {
 	struct respoke_session *session = obj;
 
+	if (session->metadata) {
+		ast_json_unref(session->metadata);
+	}
+
 	ast_party_id_free(&session->party_id);
 	ao2_cleanup(session->capabilities);
 
@@ -609,7 +613,7 @@ struct respoke_session *respoke_session_create(
 	struct respoke_transport *transport, struct respoke_endpoint *endpoint,
 	const char *local, const char *local_type, const char *local_connection, const char *remote,
 	const char *remote_type, const char *remote_connection, const char *remote_appid,
-	const char *session_id, struct ast_format_cap *caps)
+	const char *session_id, struct ast_format_cap *caps, struct ast_json *metadata)
 {
 	char id[AST_UUID_STR_LEN];
 	struct respoke_session *session = ao2_alloc(
@@ -618,6 +622,10 @@ struct respoke_session *respoke_session_create(
 	if (!session) {
 		ast_log(LOG_ERROR, "Unable to allocate session\n");
 		return NULL;
+	}
+
+	if (metadata != NULL) {
+		session->metadata = ast_json_ref(metadata);
 	}
 
 	if (ast_string_field_init(session, 512)) {
@@ -930,7 +938,8 @@ static unsigned int receive_offer(struct respoke_transaction *transaction, struc
 		      respoke_message_from_type_get(message),
 		      respoke_message_from_connection_get(message),
 		      respoke_message_from_appid_get(message),
-		      respoke_message_session_id_get(message), NULL))) {
+		      respoke_message_session_id_get(message), NULL,
+		      respoke_message_metadata_get(message)))) {
 		respoke_message_send_error_from_message(
 			message, NULL, NULL, "Unable to create session");
 		return 0;

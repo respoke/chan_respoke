@@ -196,6 +196,14 @@ const char *respoke_message_session_id_get(const struct respoke_message *message
 const char *respoke_message_connection_id_get(const struct respoke_message *message);
 
 /*!
+ * \brief Retrieve the message metadata.
+ *
+ * \param message the message object
+ * \retval The message metadata.
+ */
+struct ast_json *respoke_message_metadata_get(const struct respoke_message *message);
+
+/*!
  * \brief Retrieve the DTLS setup value from a media stream.
  *
  * \param message the message object

@@ -274,7 +274,7 @@ static int requester_task(void *obj)
 
 	if (!(data->session = respoke_session_create(
 		      NULL, endpoint, from, from_type, from_connection,
-		      args.target_endpoint, NULL, to_connection, to_appid, NULL, data->caps))) {
+		      args.target_endpoint, NULL, to_connection, to_appid, NULL, data->caps, NULL))) {
 		*data->cause = AST_CAUSE_NO_ROUTE_DESTINATION;
 		ao2_ref(endpoint, -1);
 		return -1;
