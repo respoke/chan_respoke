@@ -234,7 +234,7 @@ static int joint_capabilities_get(
 	ast_format_cap_append_from_cap(
 		endpoint_caps, message->endpoint->media.codecs, media_type);
 
-	ast_format_cap_get_compatible(incoming_caps, endpoint_caps, joint_caps);
+	ast_format_cap_get_compatible(endpoint_caps, incoming_caps, joint_caps);
 	if (!ast_format_cap_count(joint_caps)) {
 		struct ast_str *usbuf = ast_str_alloca(64);
 		struct ast_str *thembuf = ast_str_alloca(64);
@@ -683,7 +683,7 @@ struct respoke_session *respoke_session_create(
 	if (caps) {
 		/* if given caps it's an outgoing message, so go ahead
 		   and initialize the rtp instance(s) */
-		ast_format_cap_get_compatible(session->endpoint->media.codecs, caps,
+		ast_format_cap_get_compatible(caps, session->endpoint->media.codecs,
 					      session->capabilities);
 		if (!ast_format_cap_count(session->capabilities)) {
 			ast_format_cap_append_from_cap(session->capabilities, session->endpoint->media.codecs, AST_MEDIA_TYPE_UNKNOWN);
