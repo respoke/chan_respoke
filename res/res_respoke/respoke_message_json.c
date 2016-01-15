@@ -680,12 +680,17 @@ static struct ast_json *sdp_media_rtp_to_json(
 	int payload, struct ast_format *format)
 {
 	const char *codec = ast_rtp_lookup_mime_subtype2(1, format, 0, 0);
+	struct ast_str *rate = ast_str_create(128);
+
+	ast_str_set(&rate, 128, "%i%s", ast_rtp_lookup_sample_rate2(1, format, -1), (strcmp(codec, "opus")) ? "" : "/2" );
 
 	return ast_json_pack(
-		"{s:i,s:s,s:i}",
+		"{s:i,s:s,s:s}",
 		"payload", payload,
 		"codec", codec,
-		"rate", ast_rtp_lookup_sample_rate2(1, format, 0));
+		"rate", ast_str_buffer(rate));
+
+	ast_free(rate);
 }
 
 static struct ast_json *sdp_media_fmtp_to_json(
