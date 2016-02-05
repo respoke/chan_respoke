@@ -121,3 +121,51 @@ be heard and the call hung up.
 To uninstall all files associated with the example issue the following command:
 
     make uninstall-example
+
+## Asterisk Channel Variables
+
+You can use the following Respoke session information to manage them inside the asterisk channel:
+
+- RESPOKE_SESSION_LOCAL
+- RESPOKE_SESSION_LOCAL_TYPE
+- RESPOKE_SESSION_LOCAL_CONNECTION
+- RESPOKE_SESSION_REMOTE
+- RESPOKE_SESSION_REMOTE_TYPE
+- RESPOKE_SESSION_REMOTE_CONNECTION
+- RESPOKE_SESSION_REMOTE_APPID
+- RESPOKE_SESSION_ID
+
+Here it is a dialplan example in order to pass the "RESPOKE_SESSION_REMOTE" inside an asterisk channel variable:
+
+    exten => your_respoke_endpoint,1,Answer()
+    same => n,NoOp(RESPOKE METADATA: ${RESPOKE_SESSION_REMOTE})
+    same => n,Ringing
+    same => n,Wait(8)
+    same => n,Playback(welcome)
+    same => n,SayAlpha(${RESPOKE_SESSION_REMOTE})
+    same => n,Dial(SIP/300)
+    same => n,Hangup()
+
+In the above example, the "RESPOKE_SESSION_REMOTE" information is played back to the caller using the Asterisk application SayAlpha.
+
+## AMI
+
+The following Event is available on to the Asterisk Manager Interface:
+
+**Event: RespokeSession**
+
+##### Example:
+
+    Event: RespokeSession
+    Privilege: system,all
+    Channel: RESPOKE/anonymous-00000006
+    Id: 98B0F7D7-6AEC-4037-8250-8C5DFA7A2C11
+    Local: your_respoke_endpoint
+    LocalType: web
+    LocalConnection:
+    Remote: ORDER12345
+    RemoteType: web
+    RemoteConnection: 01749CDF-4BB0-41DB-8D52-30D25954D41A
+    RemoteAppId:
+
+In the above example, the AMI "RespokeSession" Event includes the respoke session information, in particular the remote field.
