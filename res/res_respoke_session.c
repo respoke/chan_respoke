@@ -73,7 +73,7 @@ int respoke_session_register_handler(struct respoke_session_handler *handler)
 {
 	SCOPED_LOCK(lock, &session_handlers, AST_RWLIST_WRLOCK, AST_RWLIST_UNLOCK);
 	AST_RWLIST_INSERT_TAIL(&session_handlers, handler, item);
-	ast_module_ref(ast_module_info->self);
+	ast_module_ref(AST_MODULE_SELF);
 
 	return 0;
 }
@@ -86,7 +86,7 @@ void respoke_session_unregister_handler(struct respoke_session_handler *handler)
 	AST_RWLIST_TRAVERSE_SAFE_BEGIN(&session_handlers, i, item) {
 		if (i == handler) {
 			AST_RWLIST_REMOVE_CURRENT(item);
-			ast_module_unref(ast_module_info->self);
+			ast_module_unref(AST_MODULE_SELF);
 			break;
 		}
 	}
@@ -1206,6 +1206,8 @@ static int load_module(void)
 	return AST_MODULE_LOAD_SUCCESS;
 }
 
+#undef AST_BUILDOPT_SUM
+#define AST_BUILDOPT_SUM ""
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_GLOBAL_SYMBOLS |
 		AST_MODFLAG_LOAD_ORDER, "Respoke Session Resource",
 		.support_level = AST_MODULE_SUPPORT_EXTENDED,

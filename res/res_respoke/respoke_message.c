@@ -60,7 +60,7 @@ int respoke_register_message_handler(const struct respoke_message_handler *handl
 	AST_RWLIST_INSERT_TAIL(&message_handlers, message_handler_list_item, list);
 	ast_debug(1, "Registered message handler of types '%s'\n", handler->types);
 
-	ast_module_ref(respoke_get_module_info()->self);
+	ast_module_ref(AST_MODULE_SELF);
 
 	return 0;
 }
@@ -75,7 +75,7 @@ void respoke_unregister_message_handler(const struct respoke_message_handler *ha
 			AST_RWLIST_REMOVE_CURRENT(list);
 			ast_free(iter);
 			ast_debug(1, "Unregistered message handler of types '%s'\n", handler->types);
-			ast_module_unref(respoke_get_module_info()->self);
+			ast_module_unref(AST_MODULE_SELF);
 			break;
 		}
 	}

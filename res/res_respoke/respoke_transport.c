@@ -70,7 +70,7 @@ int respoke_register_transport_protocol(
 	AST_RWLIST_INSERT_TAIL(&transport_protocols, transport_protocol_list_item, list);
 	ast_debug(1, "Registered transport protocol type '%s'\n", protocol->type);
 
-	ast_module_ref(respoke_get_module_info()->self);
+	ast_module_ref(AST_MODULE_SELF);
 
 	return 0;
 }
@@ -87,7 +87,7 @@ void respoke_unregister_transport_protocol(
 			ast_free(iter);
 			ast_debug(1, "Unregistered transport protocol type '%s'\n",
 				  protocol->type);
-			ast_module_unref(respoke_get_module_info()->self);
+			ast_module_unref(AST_MODULE_SELF);
 			break;
 		}
 	}

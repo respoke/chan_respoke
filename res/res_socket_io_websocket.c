@@ -118,21 +118,17 @@ static int transport_websocket_recv(void *obj, char **data, unsigned int timeout
 	return res;
 }
 
-static const struct ast_module_info *transport_websocket_module_info(void)
-{
-	return ast_module_info;
-}
-
 struct ast_socket_io_transport transport_websocket = {
 	.type = "websocket",
 	.init = transport_websocket_init,
 	.send = transport_websocket_send,
-	.recv = transport_websocket_recv,
-	.module_info = transport_websocket_module_info
+	.recv = transport_websocket_recv
 };
 
 static int load_module(void)
 {
+	transport_websocket.module = AST_MODULE_SELF;
+
 	if (ast_socket_io_transport_register(&transport_websocket)) {
 		return AST_MODULE_LOAD_FAILURE;
 	}
@@ -145,11 +141,12 @@ static int unload_module(void)
 	return 0;
 }
 
+#undef AST_BUILDOPT_SUM
+#define AST_BUILDOPT_SUM ""
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "Socket IO Transport Websocket",
 		.support_level = AST_MODULE_SUPPORT_EXTENDED,
 		.load = load_module,
 		.unload = unload_module,
 		.load_pri = AST_MODPRI_DEFAULT,
 );
-
 

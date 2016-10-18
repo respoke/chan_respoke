@@ -44,9 +44,4 @@ void respoke_destroy_configuration(void);
  */
 int respoke_reload_configuration(void);
 
-/*!
- * \brief Get the module info for res_respoke
- */
-const struct ast_module_info *respoke_get_module_info(void);
-
 #endif /* RESPOKE_PRIVATE_H_ */

@@ -43,7 +43,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
+ASTERISK_REGISTER_FILE()
 
 #include "asterisk/app.h"
 #include "asterisk/pbx.h"
@@ -57,7 +57,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 /*** DOCUMENTATION
 	<function name="RESPOKE_METADATA" language="en_US">
 		<synopsis>
-			Get the value at the specified key from a respoke session's metadata, 
+			Get the value at the specified key from a respoke session's metadata,
 			or the full value of the metadata when no key is provided.
 		</synopsis>
 		<syntax>
@@ -160,5 +160,7 @@ static int load_module(void)
 	return ast_custom_function_register(&respoke_metadata_function);
 }
 
+#undef AST_BUILDOPT_SUM
+#define AST_BUILDOPT_SUM ""
 AST_MODULE_INFO_STANDARD_EXTENDED(ASTERISK_GPL_KEY,
         "Retrieve data from a respoke session's metadata");

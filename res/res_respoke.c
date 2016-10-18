@@ -45,11 +45,6 @@
 
 static struct ast_threadpool *respoke_threadpool;
 
-const struct ast_module_info *respoke_get_module_info(void)
-{
-	return ast_module_info;
-}
-
 struct ast_taskprocessor *respoke_create_serializer(void)
 {
 	char name[AST_UUID_STR_LEN];
@@ -183,6 +178,8 @@ static int unload_module(void)
 	return 0;
 }
 
+#undef AST_BUILDOPT_SUM
+#define AST_BUILDOPT_SUM ""
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_GLOBAL_SYMBOLS | AST_MODFLAG_LOAD_ORDER, "Basic Respoke resource",
 		.support_level = AST_MODULE_SUPPORT_EXTENDED,
 		.load = load_module,

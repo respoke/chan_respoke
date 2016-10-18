@@ -64,7 +64,7 @@ int respoke_register_endpoint_identifier(const struct respoke_endpoint_identifie
 	AST_RWLIST_INSERT_TAIL(&endpoint_identifiers, endpoint_identifier_list_item, list);
 	ast_debug(1, "Registered endpoint identifier '%p'\n", identifier);
 
-	ast_module_ref(respoke_get_module_info()->self);
+	ast_module_ref(AST_MODULE_SELF);
 
 	return 0;
 }
@@ -79,7 +79,7 @@ void respoke_unregister_endpoint_identifier(const struct respoke_endpoint_identi
 			AST_RWLIST_REMOVE_CURRENT(list);
 			ast_free(iter);
 			ast_debug(1, "Unregistered endpoint identifier '%p'\n", identifier);
-			ast_module_unref(respoke_get_module_info()->self);
+			ast_module_unref(AST_MODULE_SELF);
 			break;
 		}
 	}
@@ -315,7 +315,7 @@ static int respoke_endpoint_apply(const struct ast_sorcery *sorcery, void *obj)
 		ast_uri_host(uri),
 		!ast_strlen_zero(ast_uri_port(uri)) ? ":" : "",
 		S_OR(ast_uri_port(uri), ""),
-		app->secret, 
+		app->secret,
 		encoded_sdk_header);
 
 	ao2_ref(uri, -1);

@@ -169,7 +169,7 @@ static void socket_io_transport_destroy(void *obj)
 
 	ao2_cleanup(transport->obj);
 	ao2_cleanup(transport->events);
-	ast_module_unref(transport->transport->module_info()->self);
+	ast_module_unref(transport->transport->module);
 }
 
 static AST_RWLIST_HEAD_STATIC(socket_io_transports, ast_socket_io_transport);
@@ -197,7 +197,7 @@ int ast_socket_io_transport_register(struct ast_socket_io_transport *transport)
 		return -1;
 	}
 	AST_RWLIST_INSERT_TAIL(&socket_io_transports, transport, item);
-	ast_module_ref(ast_module_info->self);
+	ast_module_ref(AST_MODULE_SELF);
 	return 0;
 }
 
@@ -209,7 +209,7 @@ void ast_socket_io_transport_unregister(struct ast_socket_io_transport *transpor
 	AST_RWLIST_TRAVERSE_SAFE_BEGIN(&socket_io_transports, item, item) {
 		if (item == transport) {
 			AST_RWLIST_REMOVE_CURRENT(item);
-			ast_module_unref(ast_module_info->self);
+			ast_module_unref(AST_MODULE_SELF);
 			break;
 		}
 	}
@@ -241,7 +241,7 @@ static struct socket_io_transport *socket_io_transport_get(const char *type)
 		return NULL;
 	}
 
-	ast_module_ref(item->module_info()->self);
+	ast_module_ref(item->module);
 	res->transport = item;
 
 	return res;
@@ -1182,6 +1182,8 @@ static int unload_module(void)
 	return 0;
 }
 
+#undef AST_BUILDOPT_SUM
+#define AST_BUILDOPT_SUM ""
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_GLOBAL_SYMBOLS | AST_MODFLAG_LOAD_ORDER, "Socket IO Support",
 		.support_level = AST_MODULE_SUPPORT_EXTENDED,
 		.load = load_module,

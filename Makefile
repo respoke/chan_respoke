@@ -78,7 +78,8 @@ endef
 all: $(RES_RESPOKE_TARGET) $(MOD_TARGETS)
 
 %.o: %.c
-	$(COMPILE.c) -DAST_MODULE=\"$(notdir $(basename $@))\" $< -o $@
+	$(COMPILE.c) -DAST_MODULE=\"$(notdir $(basename $@))\" \
+		-DAST_MODULE_SELF_SYM=__internal_$(notdir $(basename $@))_self $< -o $@
 
 $(RES_RESPOKE_TARGET): $(RES_RESPOKE_OBJS)
 	$(mod.link)

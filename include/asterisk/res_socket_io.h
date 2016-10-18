@@ -30,7 +30,6 @@
 
 struct ast_uri;
 struct ast_json;
-struct ast_module_info;
 struct ast_str;
 
 #define SOCKET_IO_VERSION "1"
@@ -90,10 +89,8 @@ struct ast_socket_io_transport {
 	 * \brief Receive data over the transport.
 	 */
 	int (*recv)(void *obj, char **buf, unsigned int timeout_secs);
-	/*!
-	 * \brief Retrieves the transport's module.
-	 */
-	const struct ast_module_info *(*module_info)(void);
+	/*! transport module */
+	struct ast_module *module;
 	/*! list item pointer */
 	AST_RWLIST_ENTRY(ast_socket_io_transport) item;
 };
