@@ -61,6 +61,8 @@ static int load_module(void)
 		AST_MODULE_LOAD_FAILURE : AST_MODULE_LOAD_SUCCESS;
 }
 
+#undef AST_BUILDOPT_SUM
+#define AST_BUILDOPT_SUM ""
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "Respoke Anonymous endpoint identifier",
 		.support_level = AST_MODULE_SUPPORT_EXTENDED,
 		.load = load_module,

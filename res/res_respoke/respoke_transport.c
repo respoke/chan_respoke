@@ -274,4 +274,3 @@ void respoke_transport_deinitialize(void)
 {
 	respoke_transport_socket_io_deinitialize();
 }
-

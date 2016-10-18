@@ -315,7 +315,7 @@ static int respoke_endpoint_apply(const struct ast_sorcery *sorcery, void *obj)
 		ast_uri_host(uri),
 		!ast_strlen_zero(ast_uri_port(uri)) ? ":" : "",
 		S_OR(ast_uri_port(uri), ""),
-		app->secret, 
+		app->secret,
 		encoded_sdk_header);
 
 	ao2_ref(uri, -1);

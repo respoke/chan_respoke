@@ -78,11 +78,13 @@ endef
 all: $(RES_RESPOKE_TARGET) $(MOD_TARGETS)
 
 %.o: %.c
-	$(COMPILE.c) -DAST_MODULE=\"$(notdir $(basename $@))\" $< -o $@
+	$(COMPILE.c) $(MODULE_CFLAGS) $< -o $@
 
+$(RES_RESPOKE_TARGET): MODULE_CFLAGS = -DAST_MODULE=\"res_respoke\" -DAST_MODULE_SELF_SYM=__internal_res_respoke_self
 $(RES_RESPOKE_TARGET): $(RES_RESPOKE_OBJS)
 	$(mod.link)
 
+$(MOD_TARGETS): MODULE_CFLAGS = -DAST_MODULE=\"$(notdir $(basename $@))\" -DAST_MODULE_SELF_SYM=__internal_$(notdir $(basename $@))_self
 $(MOD_TARGETS): %.so: %.o
 	$(mod.link)
 
