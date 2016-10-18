@@ -40,7 +40,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 422579 $")
+ASTERISK_REGISTER_FILE()
 
 #include "asterisk/app.h"
 #include "asterisk/pbx.h"
@@ -158,4 +158,6 @@ static int load_module(void)
 	return ast_custom_function_register(&respoke_endpoint_function);
 }
 
+#undef AST_BUILDOPT_SUM
+#define AST_BUILDOPT_SUM ""
 AST_MODULE_INFO_STANDARD_EXTENDED(ASTERISK_GPL_KEY, "Get information about a Respoke endpoint");

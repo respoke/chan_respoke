@@ -31,7 +31,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 420778 $")
+ASTERISK_REGISTER_FILE()
 
 #include "asterisk/module.h"
 #include "asterisk/test.h"
@@ -169,6 +169,8 @@ static int load_module(void)
 	return AST_MODULE_LOAD_SUCCESS;
 }
 
+#undef AST_BUILDOPT_SUM
+#define AST_BUILDOPT_SUM ""
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "Respoke module testing",
 	.support_level = AST_MODULE_SUPPORT_EXTENDED,
 	.load = load_module,

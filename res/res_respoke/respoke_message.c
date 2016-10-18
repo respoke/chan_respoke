@@ -343,4 +343,3 @@ int respoke_message_send_error_from_message(const struct respoke_message *messag
 	va_end(ap);
 	return res;
 }
-
