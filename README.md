@@ -121,3 +121,11 @@ be heard and the call hung up.
 To uninstall all files associated with the example issue the following command:
 
     make uninstall-example
+
+## Building for Distribution
+
+To build a tar to attach to the github release, run `make dist`. Note: using
+the Makefile checks for Asterisk to be installed on the system. If you don't
+have Asterisk on your system but still need to cut a new release, you can
+run `./build_tools/make_version && ./build_tools/make_dist` to generate the
+tar with the appropriate .version file in it.
