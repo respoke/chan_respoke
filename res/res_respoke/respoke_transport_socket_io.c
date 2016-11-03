@@ -48,8 +48,10 @@ static void socket_io_state_destroy(void *obj)
 	/* tell the messaging thread to stop */
 	ast_socket_io_stop(state->session);
 	state->stop = 1;
-	pthread_kill(state->recv_thread, SIGURG);
-	pthread_join(state->recv_thread, NULL);
+	if (state->recv_thread != AST_PTHREADT_NULL) {
+		pthread_kill(state->recv_thread, SIGURG);
+		pthread_join(state->recv_thread, NULL);
+	}
 
 	ao2_ref(state->namespace, -1);
 	ao2_ref(state->session, -1);
