@@ -43,6 +43,8 @@ struct respoke_endpoint_state {
 	struct respoke_transport *transport;
 	/*! The application the endpoint is configured with */
 	struct respoke_app *app;
+	/* The endpoint name that this state belongs to. */
+	char name[];
 };
 
 /*!
@@ -104,8 +106,6 @@ struct respoke_endpoint {
 	unsigned int register_with_service;
 	/*! Media configuration */
 	struct respoke_endpoint_media media;
-	/*! Optional state information, if registering with service */
-	struct respoke_endpoint_state *state;
 	/*! How to handle redirects received */
 	enum respoke_endpoint_redirect redirect;
 };

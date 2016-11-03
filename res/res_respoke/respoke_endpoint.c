@@ -43,6 +43,60 @@
 #include "include/respoke_app.h"
 #include "include/respoke_sdk_header.h"
 
+#define DEFAULT_STATE_BUCKETS 53
+
+static AO2_GLOBAL_OBJ_STATIC(endpoint_states);
+
+/*! \brief hashing function for state objects */
+static int endpoint_state_hash(const void *obj, const int flags)
+{
+	const struct respoke_endpoint_state *object;
+	const char *key;
+
+	switch (flags & OBJ_SEARCH_MASK) {
+	case OBJ_SEARCH_KEY:
+		key = obj;
+		break;
+	case OBJ_SEARCH_OBJECT:
+		object = obj;
+		key = object->name;
+		break;
+	default:
+		ast_assert(0);
+		return 0;
+	}
+	return ast_str_hash(key);
+}
+
+/*! \brief comparator function for state objects */
+static int endpoint_state_cmp(void *obj, void *arg, int flags)
+{
+	const struct respoke_endpoint_state *object_left = obj;
+	const struct respoke_endpoint_state *object_right = arg;
+	const char *right_key = arg;
+	int cmp;
+
+	switch (flags & OBJ_SEARCH_MASK) {
+	case OBJ_SEARCH_OBJECT:
+		right_key = object_right->name;
+		/* Fall through */
+	case OBJ_SEARCH_KEY:
+		cmp = strcmp(object_left->name, right_key);
+		break;
+	case OBJ_SEARCH_PARTIAL_KEY:
+		/* Not supported by container. */
+		ast_assert(0);
+		return 0;
+	default:
+		cmp = 0;
+		break;
+	}
+	if (cmp) {
+		return 0;
+	}
+	return CMP_MATCH;
+}
+
 struct endpoint_identifier_list {
 	const struct respoke_endpoint_identifier *identifier;
 	AST_RWLIST_ENTRY(endpoint_identifier_list) list;
@@ -115,14 +169,12 @@ static void respoke_endpoint_destroy(void *obj)
 	ast_string_field_free_memory(endpoint);
 	ast_party_id_free(&endpoint->callerid);
 	ast_rtp_dtls_cfg_free(&endpoint->media.dtls_cfg);
-	ao2_cleanup(endpoint->state);
 }
 
 static void *respoke_endpoint_alloc(const char *name)
 {
 	struct respoke_endpoint *endpoint = ast_sorcery_generic_alloc(
 		sizeof(*endpoint), respoke_endpoint_destroy);
-	struct respoke_endpoint *existing;
 
 	if (!endpoint) {
 		return NULL;
@@ -145,13 +197,6 @@ static void *respoke_endpoint_alloc(const char *name)
 	endpoint->media.dtls_cfg.enabled = 1;
 	endpoint->media.dtls_cfg.suite = AST_AES_CM_128_HMAC_SHA1_80;
 
-	existing = ast_sorcery_retrieve_by_id(respoke_get_sorcery(), RESPOKE_ENDPOINT,
-		name);
-	if (existing) {
-		endpoint->state = ao2_bump(existing->state);
-		ao2_ref(existing, -1);
-	}
-
 	return endpoint;
 }
 
@@ -163,14 +208,45 @@ static void respoke_endpoint_state_destroy(void *obj)
 	ao2_cleanup(state->app);
 }
 
+static struct respoke_endpoint_state *respoke_endpoint_state_retrieve(const char *name)
+{
+	RAII_VAR(struct ao2_container *, states, ao2_global_obj_ref(endpoint_states), ao2_cleanup);
+
+	if (!states) {
+		return NULL;
+	}
+
+	return ao2_find(states, name, OBJ_SEARCH_KEY);
+}
+
+static struct respoke_endpoint_state *respoke_endpoint_state_alloc(struct respoke_endpoint *endpoint)
+{
+	struct respoke_endpoint_state *state;
+	RAII_VAR(struct ao2_container *, states, ao2_global_obj_ref(endpoint_states), ao2_cleanup);
+
+	if (!states) {
+		return NULL;
+	}
+
+	state = ao2_alloc(sizeof(*state) + strlen(ast_sorcery_object_get_id(endpoint)) + 1, respoke_endpoint_state_destroy);
+	if (!state) {
+		ast_log(LOG_ERROR, "Could not allocate persistent state for endpoint '%s'\n",
+			ast_sorcery_object_get_id(endpoint));
+		return NULL;
+	}
+	strcpy(state->name, ast_sorcery_object_get_id(endpoint)); /* safe */
+	ao2_link(states, state);
+
+	return state;
+}
+
 static int can_reuse_state(struct respoke_endpoint_state *state, struct respoke_app *app,
 	struct respoke_transport *transport)
 {
 	if (strcmp(ast_sorcery_object_get_id(state->app), ast_sorcery_object_get_id(app)) ||
 		strcmp(state->app->secret, app->secret) ||
 		strcmp(ast_sorcery_object_get_id(state->transport), ast_sorcery_object_get_id(transport)) ||
-		strcmp(state->transport->protocol, transport->protocol) ||
-		strcmp(state->transport->uri, transport->uri)) {
+		strcmp(state->transport->protocol, transport->protocol)) {
 		return 0;
 	}
 
@@ -225,7 +301,9 @@ static void respoke_endpoint_auth_callback(struct respoke_transport *transport, 
 
 static int respoke_endpoint_apply(const struct ast_sorcery *sorcery, void *obj)
 {
+	RAII_VAR(struct ao2_container *, states, ao2_global_obj_ref(endpoint_states), ao2_cleanup);
 	struct respoke_endpoint *endpoint = obj;
+	RAII_VAR(struct respoke_endpoint_state *, state, NULL, ao2_cleanup);
 	struct respoke_app *app;
 	struct respoke_transport *transport;
 	char *name;
@@ -235,10 +313,12 @@ static int respoke_endpoint_apply(const struct ast_sorcery *sorcery, void *obj)
 
 	if (!endpoint->register_with_service) {
 		/* This is done in case the configuration for the endpoint goes from register with service
-		 * to not registering with service.
-		 */
-		ao2_cleanup(endpoint->state);
-		endpoint->state = NULL;
+		* to not registering with service.
+		*/
+		state = respoke_endpoint_state_retrieve(ast_sorcery_object_get_id(endpoint));
+		if (state) {
+			ao2_unlink(states, state);
+		}
 		return 0;
 	}
 
@@ -270,18 +350,22 @@ static int respoke_endpoint_apply(const struct ast_sorcery *sorcery, void *obj)
 	}
 
 	/* Determine if we need fresh state and to reconnect */
-	if (endpoint->state) {
-		if (can_reuse_state(endpoint->state, app, transport)) {
+	state = respoke_endpoint_state_retrieve(ast_sorcery_object_get_id(endpoint));
+	if (state) {
+		if (can_reuse_state(state, app, transport)) {
 			/* Nothing has changed that warrants us reconnecting */
 			ao2_ref(app, -1);
 			ao2_ref(transport, -1);
 			return 0;
 		}
-		ao2_ref(endpoint->state, -1);
+		/* Can't reuse it; get rid of the old state */
+		ao2_unlink(states, state);
+		ao2_ref(state, -1);
+		state = NULL;
 	}
 
-	endpoint->state = ao2_alloc(sizeof(*endpoint->state), respoke_endpoint_state_destroy);
-	if (!endpoint->state) {
+	state = respoke_endpoint_state_alloc(endpoint);
+	if (!state) {
 		ast_log(LOG_ERROR, "Could not allocate persistent state for endpoint '%s'\n",
 			ast_sorcery_object_get_id(endpoint));
 		ao2_ref(app, -1);
@@ -289,40 +373,41 @@ static int respoke_endpoint_apply(const struct ast_sorcery *sorcery, void *obj)
 		return -1;
 	}
 
-	endpoint->state->app = app;
-	endpoint->state->transport = ast_sorcery_copy(respoke_get_sorcery(), transport);
+	state->app = ast_sorcery_copy(respoke_get_sorcery(), app);
+	state->transport = ast_sorcery_copy(respoke_get_sorcery(), transport);
+	ao2_ref(app, -1);
 	ao2_ref(transport, -1);
 
-	if (!endpoint->state->transport) {
-		ast_log(LOG_ERROR, "Could not create a transport on endpoint '%s'\n",
-			ast_sorcery_object_get_id(endpoint));
+	if (!state->transport || !state->app) {
+		ast_log(LOG_ERROR, "Could not create necessary objects on endpoint state '%s'\n",
+			state->name);
 		return -1;
 	}
 
 	/* Update the URI to include the provided App-Secret from the application */
-	uri = ast_uri_parse_http(endpoint->state->transport->uri);
+	uri = ast_uri_parse_http(state->transport->uri);
 	if (!uri) {
 		ast_log(LOG_ERROR, "Could not parse provided transport URI '%s' on endpoint '%s'\n",
-			endpoint->state->transport->uri, ast_sorcery_object_get_id(endpoint));
+			state->transport->uri, state->name);
 		return -1;
 	}
 
 	respoke_get_sdk_header(sdk_header, sizeof(sdk_header));
 	ast_uri_encode(sdk_header, encoded_sdk_header, sizeof(encoded_sdk_header), ast_uri_http);
-	ast_string_field_build(endpoint->state->transport, uri, "%s%s%s%s%s/?app-secret=%s&Respoke-SDK=%s",
+	ast_string_field_build(state->transport, uri, "%s%s%s%s%s/?app-secret=%s&Respoke-SDK=%s",
 		S_OR(ast_uri_scheme(uri), ""),
 		!ast_strlen_zero(ast_uri_scheme(uri)) ? "://" : "",
 		ast_uri_host(uri),
 		!ast_strlen_zero(ast_uri_port(uri)) ? ":" : "",
 		S_OR(ast_uri_port(uri), ""),
-		app->secret,
+		state->app->secret,
 		encoded_sdk_header);
 
 	ao2_ref(uri, -1);
-	ast_string_field_set(endpoint->state->transport, app_secret, app->secret);
+	ast_string_field_set(state->transport, app_secret, state->app->secret);
 
-	endpoint->state->transport->state = respoke_transport_create_instance(endpoint->state->transport);
-	if (!endpoint->state->transport->state) {
+	state->transport->state = respoke_transport_create_instance(state->transport);
+	if (!state->transport->state) {
 		ast_log(LOG_ERROR, "Could not create a connection using transport '%s' on endpoint '%s'\n",
 			endpoint->transport_name, ast_sorcery_object_get_id(endpoint));
 		return -1;
@@ -339,13 +424,15 @@ static int respoke_endpoint_apply(const struct ast_sorcery *sorcery, void *obj)
 	}
 	strcpy(name, ast_sorcery_object_get_id(endpoint)); /* Safe */
 
-	respoke_transport_set_callback(endpoint->state->transport->state, respoke_endpoint_auth_callback, name);
+	respoke_transport_set_callback(state->transport->state, respoke_endpoint_auth_callback, name);
 
-	if (respoke_transport_start(endpoint->state->transport)) {
+	if (respoke_transport_start(state->transport)) {
 		ast_log(LOG_ERROR, "Could not start instance of transport '%s' on endpoint '%s'\n",
 			endpoint->transport_name, ast_sorcery_object_get_id(endpoint));
 		return -1;
 	}
+
+	/* states container holds the only reference, allow the RAII_VAR to drop it */
 
 	return 0;
 }
@@ -637,9 +724,97 @@ static int redirect_handler(const struct aco_option *opt, struct ast_variable *v
 	return 0;
 }
 
+static int check_state(void *obj, void *arg, int flags)
+{
+	struct respoke_endpoint_state *state = obj;
+	struct respoke_endpoint *endpoint;
+
+	endpoint = ast_sorcery_retrieve_by_id(respoke_get_sorcery(), RESPOKE_ENDPOINT, state->name);
+	if (!endpoint) {
+		/* This is a dead endpoint */
+		return CMP_MATCH;
+	}
+
+	ao2_ref(endpoint, -1);
+	return 0;
+}
+
+/*!
+ * \internal
+ * \brief Observer to purge dead endpoint states.
+ *
+ * \param name Module name owning the sorcery instance.
+ * \param sorcery Instance being observed.
+ * \param object_type Name of object being observed.
+ * \param reloaded Non-zero if the object is being reloaded.
+ *
+ * \return Nothing
+ */
+static void endpoint_loaded_observer(const char *name, const struct ast_sorcery *sorcery, const char *object_type, int reloaded)
+{
+	struct ao2_container *states;
+
+	if (strcmp(object_type, RESPOKE_ENDPOINT)) {
+		/* Not interested */
+		return;
+	}
+
+	states = ao2_global_obj_ref(endpoint_states);
+	if (!states) {
+		/* Global container has gone.  Likely shutting down. */
+		return;
+	}
+
+	/*
+	 * Refresh the current configured endpoints. We don't need to hold
+	 * onto the objects, as the apply handler will cause their states to
+	 * be created appropriately.
+	 */
+	ao2_cleanup(ast_sorcery_retrieve_by_fields(
+		respoke_get_sorcery(), RESPOKE_ENDPOINT,
+		AST_RETRIEVE_FLAG_MULTIPLE | AST_RETRIEVE_FLAG_ALL, NULL));
+
+	/* Now to purge dead endpoints. */
+	ao2_callback(states, OBJ_UNLINK | OBJ_NODATA | OBJ_MULTIPLE, check_state, NULL);
+	ao2_ref(states, -1);
+}
+
+static const struct ast_sorcery_instance_observer observer_callbacks = {
+	.object_type_loaded = endpoint_loaded_observer,
+};
+
+static void endpoint_deleted_observer(const void *obj)
+{
+	const struct respoke_endpoint *endpoint = obj;
+	struct ao2_container *states;
+
+	states = ao2_global_obj_ref(endpoint_states);
+	if (!states) {
+		/* Global container has gone.  Likely shutting down. */
+		return;
+	}
+	ao2_find(states, ast_sorcery_object_get_id(endpoint), OBJ_UNLINK | OBJ_NODATA | OBJ_SEARCH_KEY);
+	ao2_ref(states, -1);
+}
+
+static const struct ast_sorcery_observer endpoint_observer = {
+	.deleted = endpoint_deleted_observer,
+};
+
 int respoke_endpoint_initialize(void)
 {
 	struct ast_sorcery *sorcery = respoke_get_sorcery();
+	struct ao2_container *new_states;
+
+	/* Create endpoint states container. */
+	new_states = ao2_container_alloc(DEFAULT_STATE_BUCKETS,
+		endpoint_state_hash, endpoint_state_cmp);
+	if (!new_states) {
+		ast_log(LOG_ERROR, "Unable to allocate states container\n");
+		return -1;
+	}
+	ao2_global_obj_replace_unref(endpoint_states, new_states);
+	ao2_ref(new_states, -1);
 
 	ast_sorcery_apply_default(sorcery, RESPOKE_ENDPOINT, "config",
 				  "respoke.conf,criteria=type=endpoint");
@@ -647,6 +822,7 @@ int respoke_endpoint_initialize(void)
 	if (ast_sorcery_internal_object_register(
 		    sorcery, RESPOKE_ENDPOINT, respoke_endpoint_alloc,
 		    NULL, respoke_endpoint_apply)) {
+		ao2_global_obj_replace_unref(endpoint_states, NULL);
 		return -1;
 	}
 
@@ -717,6 +893,16 @@ int respoke_endpoint_initialize(void)
 	ast_sorcery_object_field_register_custom_nodoc(
 		sorcery, RESPOKE_ENDPOINT, "redirect_method", "core", redirect_handler, NULL, NULL, 0, 0);
 
+	/*
+	 * Register sorcery observers.
+	 */
+	if (ast_sorcery_instance_observer_add(sorcery, &observer_callbacks)
+		|| ast_sorcery_observer_add(sorcery, RESPOKE_ENDPOINT, &endpoint_observer)) {
+		ast_log(LOG_ERROR, "Unable to register observers.\n");
+		ao2_global_obj_replace_unref(endpoint_states, NULL);
+		return -1;
+	}
+
 	ast_cli_register_multiple(cli_respoke_endpoint, ARRAY_LEN(cli_respoke_endpoint));
 
 	return 0;
@@ -725,4 +911,5 @@ int respoke_endpoint_initialize(void)
 void respoke_endpoint_deinitialize(void)
 {
 	ast_cli_unregister_multiple(cli_respoke_endpoint, ARRAY_LEN(cli_respoke_endpoint));
+	ao2_global_obj_replace_unref(endpoint_states, NULL);
 }

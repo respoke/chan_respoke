@@ -129,6 +129,7 @@ struct respoke_transport_state {
 static void respoke_transport_state_destroy(void *obj)
 {
 	struct respoke_transport_state *state = obj;
+
 	ao2_cleanup(state->data);
 	ao2_cleanup(state->callback_data);
 }
