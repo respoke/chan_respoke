@@ -786,6 +786,7 @@ static const struct ast_sorcery_instance_observer observer_callbacks = {
 static void endpoint_deleted_observer(const void *obj)
 {
 	const struct respoke_endpoint *endpoint = obj;
+	struct respoke_endpoint_state *state;
 	struct ao2_container *states;
 
 	states = ao2_global_obj_ref(endpoint_states);
