@@ -574,10 +574,23 @@ static int indicate_channel(struct ast_channel *chan, int condition, const void 
 			status = RESPOKE_STATUS_REDIRECTING;
 		}
 		break;
-	case AST_CONTROL_UPDATE_RTP_PEER:
+	case AST_CONTROL_VIDUPDATE:
+		if (session->video_rtp) {
+			struct ast_frame fr;
+			fr.frametype = AST_FRAME_CONTROL;
+			fr.subclass.integer = AST_CONTROL_VIDUPDATE;
+			ast_rtp_instance_write(session->video_rtp, &fr);
+		}
+		return 0;
 	case AST_CONTROL_SRCUPDATE:
+		ast_rtp_instance_update_source(session->audio_rtp);
+		break;
 	case AST_CONTROL_SRCCHANGE:
+		ast_rtp_instance_change_source(session->audio_rtp);
+		break;
+	case AST_CONTROL_UPDATE_RTP_PEER:
 	case AST_CONTROL_PVT_CAUSE_CODE:
+	case AST_CONTROL_CONNECTED_LINE:
 		return 0;
 	case -1:
 		return -1;
