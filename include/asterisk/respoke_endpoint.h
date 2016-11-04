@@ -43,6 +43,8 @@ struct respoke_endpoint_state {
 	struct respoke_transport *transport;
 	/*! The application the endpoint is configured with */
 	struct respoke_app *app;
+	/* The endpoint name that this state belongs to. */
+	char name[];
 };
 
 /*!
@@ -104,8 +106,6 @@ struct respoke_endpoint {
 	unsigned int register_with_service;
 	/*! Media configuration */
 	struct respoke_endpoint_media media;
-	/*! Optional state information, if registering with service */
-	struct respoke_endpoint_state *state;
 	/*! How to handle redirects received */
 	enum respoke_endpoint_redirect redirect;
 };
@@ -160,5 +160,15 @@ void respoke_unregister_endpoint_identifier(const struct respoke_endpoint_identi
  */
 struct respoke_endpoint *respoke_endpoint_identify(
 	struct respoke_message *message);
+
+/*!
+ * \brief Retrieve the state object for a Respoke endpoint
+ *
+ * \param name The name of the Respoke endpoint
+ *
+ * \retval NULL if the endpoint has no state
+ * \retval state on success
+ */
+struct respoke_endpoint_state *respoke_endpoint_state_retrieve(const char *name);
 
 #endif /* RESPOKE_ENDPOINT_H_ */
