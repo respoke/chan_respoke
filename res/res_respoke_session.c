@@ -617,6 +617,7 @@ struct respoke_session *respoke_session_create(
 	char id[AST_UUID_STR_LEN];
 	struct respoke_session *session = ao2_alloc(
 		sizeof(struct respoke_session), session_destroy);
+	struct respoke_endpoint_state *state;
 
 	if (!session) {
 		ast_log(LOG_ERROR, "Unable to allocate session\n");
@@ -638,14 +639,16 @@ struct respoke_session *respoke_session_create(
 		return NULL;
 	}
 
-	if (!transport && endpoint->state && endpoint->state->transport) {
-		transport = endpoint->state->transport;
+	state = respoke_endpoint_state_retrieve(ast_sorcery_object_get_id(endpoint));
+	if (!transport && state && state->transport) {
+		transport = state->transport;
 	}
 
 	if (!transport) {
 		ast_log(LOG_ERROR, "No transport available on endpoint '%s' for sending\n",
 			ast_sorcery_object_get_id(endpoint));
 		ao2_ref(session, -1);
+		ao2_cleanup(state);
 		return NULL;
 	}
 
@@ -668,6 +671,7 @@ struct respoke_session *respoke_session_create(
 	if (!(session->serializer = respoke_create_serializer())) {
 		ast_log(LOG_ERROR, "Unable to create session serializer\n");
 		ao2_ref(session, -1);
+		ao2_cleanup(state);
 		return NULL;
 	}
 
@@ -676,6 +680,7 @@ struct respoke_session *respoke_session_create(
 	if (!(session->capabilities = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT))) {
 		ast_log(LOG_ERROR, "Unable to create session capabilities\n");
 		ao2_ref(session, -1);
+		ao2_cleanup(state);
 		return NULL;
 	}
 
@@ -694,9 +699,12 @@ struct respoke_session *respoke_session_create(
 			ast_log(LOG_ERROR, "Unable to create session - "
 				"no audio or video rtp\n");
 			ao2_ref(session, -1);
+			ao2_cleanup(state);
 			return NULL;
 		}
 	}
+
+	ao2_cleanup(state);
 
 	return session;
 }

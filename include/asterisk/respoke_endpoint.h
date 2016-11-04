@@ -161,4 +161,14 @@ void respoke_unregister_endpoint_identifier(const struct respoke_endpoint_identi
 struct respoke_endpoint *respoke_endpoint_identify(
 	struct respoke_message *message);
 
+/*!
+ * \brief Retrieve the state object for a Respoke endpoint
+ *
+ * \param name The name of the Respoke endpoint
+ *
+ * \retval NULL if the endpoint has no state
+ * \retval state on success
+ */
+struct respoke_endpoint_state *respoke_endpoint_state_retrieve(const char *name);
+
 #endif /* RESPOKE_ENDPOINT_H_ */

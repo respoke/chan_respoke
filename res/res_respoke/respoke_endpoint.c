@@ -208,7 +208,7 @@ static void respoke_endpoint_state_destroy(void *obj)
 	ao2_cleanup(state->app);
 }
 
-static struct respoke_endpoint_state *respoke_endpoint_state_retrieve(const char *name)
+struct respoke_endpoint_state *respoke_endpoint_state_retrieve(const char *name)
 {
 	RAII_VAR(struct ao2_container *, states, ao2_global_obj_ref(endpoint_states), ao2_cleanup);
 
