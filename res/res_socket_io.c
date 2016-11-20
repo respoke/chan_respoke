@@ -1040,7 +1040,7 @@ static size_t client_session_create(void *ptr, size_t size, size_t nmemb, void *
 
 	/* session id */
 	if (!(end = strchr(start, ':'))) {
-		ast_log(LOG_ERROR, "Session id not found in %s\n", start);
+		ast_log(LOG_ERROR, "Session id not found in '%s'\n", start);
 		return 0;
 	}
 	session->id = ast_strndup(start, end - start);
@@ -1049,7 +1049,7 @@ static size_t client_session_create(void *ptr, size_t size, size_t nmemb, void *
 	/* heartbeat timeout */
 	if (!(end = strchr(start, ':'))) {
 		ast_log(LOG_ERROR, "Session heartbeat timeout not "
-			"found in %s\n", start);
+			"found in '%s'\n", start);
 		return 0;
 	}
 
@@ -1066,7 +1066,7 @@ static size_t client_session_create(void *ptr, size_t size, size_t nmemb, void *
 	/* connection closing timeout */
 	if (!(end = strchr(start, ':'))) {
 		ast_log(LOG_ERROR, "Connection closing timeout not "
-			"found in %s\n", start);
+			"found in '%s'\n", start);
 		return 0;
 	}
 
@@ -1117,6 +1117,7 @@ static enum ast_socket_io_result socket_io_client_session_establish(
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, client_session_create);
 	curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curl_error);
 
+	ast_debug(1, "Establinshing Respoke connection to: %s\n", ast_str_buffer(uri));
 	if (curl_easy_perform(curl)) {
 		ast_log(LOG_ERROR, "Socket IO [curl]: %s\n", curl_error);
 		curl_easy_cleanup(curl);
