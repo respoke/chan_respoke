@@ -71,16 +71,11 @@ static void *transport_websocket_init(const struct ast_socket_io_session *sessio
 	ast_free(uri);
 
 	if (ws) {
-		struct protoent *p;
+		int arg = 1;
 
-		p = getprotobyname("tcp");
-		if (p) {
-			int arg = 1;
-
-			if (setsockopt(ast_websocket_fd(ws), p->p_proto, TCP_NODELAY, (char *) &arg, sizeof(arg) ) < 0) {
-				ast_log(LOG_WARNING, "Failed to set TCP_NODELAY on HTTP connection: %s\n", strerror(errno));
-				ast_log(LOG_WARNING, "Some HTTP requests may be slow to respond.\n");
-			}
+		if (setsockopt(ast_websocket_fd(ws), IPPROTO_TCP, TCP_NODELAY, (char *) &arg, sizeof(arg) ) < 0) {
+			ast_log(LOG_WARNING, "Failed to set TCP_NODELAY on HTTP connection: %s\n", strerror(errno));
+			ast_log(LOG_WARNING, "Some HTTP requests may be slow to respond.\n");
 		}
 
 		ast_websocket_set_nonblock(ws);
