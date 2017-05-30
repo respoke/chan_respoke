@@ -1,4 +1,5 @@
 ## About
+[![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/respoke/chan_respoke?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 The Respoke Modules for Asterisk (RMA) is a collection of libraries that provide
 the necessary tools in order to allow communication between Asterisk and the
