@@ -31,7 +31,7 @@ else
     AST_EXECS_DIR=$(AST_INSTALL_DIR)
 endif
 
-AST_VERSION=13
+AST_VERSION=$(shell build_tools/get_asterisk_version $(AST_EXECS_DIR))
 AST_MODULES_DIR=$(AST_EXECS_DIR)/lib/asterisk/modules
 AST_INCLUDE_DIR=$(AST_EXECS_DIR)/include/asterisk
 AST_CONF_DIR=$(AST_INSTALL_DIR)/etc/asterisk
@@ -40,10 +40,6 @@ AST_SOUNDS_DIR=$(AST_INSTALL_DIR)/var/lib/asterisk/sounds
 # if asterisk is not installed at location don't proceed
 $(if $(wildcard $(AST_INCLUDE_DIR)),, \
 	$(error "Asterisk installation not found under $(AST_EXECS_DIR)"))
-
-# only build against certain asterisk versions
-$(if $(shell build_tools/get_asterisk_version $(AST_EXECS_DIR) $(AST_VERSION)), \
-	$(error "Asterisk version must be >= $(AST_VERSION) to build against"))
 
 # res_respoke
 RES_RESPOKE_DIR=res/res_respoke
@@ -80,11 +76,11 @@ all: $(RES_RESPOKE_TARGET) $(MOD_TARGETS)
 %.o: %.c
 	$(COMPILE.c) $(MODULE_CFLAGS) $< -o $@
 
-$(RES_RESPOKE_TARGET): MODULE_CFLAGS = -DAST_MODULE=\"res_respoke\" -DAST_MODULE_SELF_SYM=__internal_res_respoke_self
+$(RES_RESPOKE_TARGET): MODULE_CFLAGS = -DAST_VERSION_MAJOR=$(AST_VERSION) -DAST_MODULE=\"res_respoke\" -DAST_MODULE_SELF_SYM=__internal_res_respoke_self
 $(RES_RESPOKE_TARGET): $(RES_RESPOKE_OBJS)
 	$(mod.link)
 
-$(MOD_TARGETS): MODULE_CFLAGS = -DAST_MODULE=\"$(notdir $(basename $@))\" -DAST_MODULE_SELF_SYM=__internal_$(notdir $(basename $@))_self
+$(MOD_TARGETS): MODULE_CFLAGS = -DAST_VERSION_MAJOR=$(AST_VERSION) -DAST_MODULE=\"$(notdir $(basename $@))\" -DAST_MODULE_SELF_SYM=__internal_$(notdir $(basename $@))_self
 $(MOD_TARGETS): %.so: %.o
 	$(mod.link)
 
