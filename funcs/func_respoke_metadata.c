@@ -43,7 +43,9 @@
 
 #include "asterisk.h"
 
+#if ASTERISK_MAJOR_VERSION >= 13 && ASTERISK_MAJOR_VERSION < 15
 ASTERISK_REGISTER_FILE()
+#endif
 
 #include "asterisk/app.h"
 #include "asterisk/pbx.h"
